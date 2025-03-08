@@ -26,7 +26,9 @@ func ParseINI(filePath string) (map[string]map[string]string, error) {
 
 		if strings.HasPrefix(line, "[") && strings.HasSuffix(line, "]") {
 			currentSection = strings.TrimSpace(line[1 : len(line)-1])
-			result[currentSection] = make(map[string]string)
+			if _, exists := result[currentSection]; !exists {
+				result[currentSection] = make(map[string]string)
+			}
 			continue
 		}
 
@@ -34,7 +36,7 @@ func ParseINI(filePath string) (map[string]map[string]string, error) {
 			key := strings.TrimSpace(line[:equalIndex])
 			value := strings.TrimSpace(line[equalIndex+1:])
 			if currentSection == "" {
-				currentSection = "default"
+				currentSection = "root"
 				if _, exists := result[currentSection]; !exists {
 					result[currentSection] = make(map[string]string)
 				}
