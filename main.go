@@ -17,8 +17,6 @@ func main() {
 		return
 	}
 
-	// fmt.Println(os.Args[1:]) // print all args
-
 	args := []string{}
 	if len(os.Args) > 2 {
 		args = os.Args[2:]

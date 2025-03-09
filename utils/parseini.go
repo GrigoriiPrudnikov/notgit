@@ -6,7 +6,7 @@ import (
 	"strings"
 )
 
-func ParseINI(filePath string) (map[string]map[string]string, error) {
+func ParseConfig(filePath string) (map[string]map[string]string, error) {
 	result := make(map[string]map[string]string)
 	var currentSection string
 

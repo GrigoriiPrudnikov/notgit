@@ -68,7 +68,7 @@ func Config(args []string) {
 	}
 	fmt.Println(dir)
 
-	fileMap, err := utils.ParseINI(filepath.Join(dir, ".notgitconfig"))
+	fileMap, err := utils.ParseConfig(filepath.Join(dir, ".notgitconfig"))
 	if err != nil {
 		fmt.Println(err)
 		return
