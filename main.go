@@ -6,9 +6,9 @@ import (
 	"os"
 )
 
-var actions = map[string]func([]string){
-	"init":   commands.Init,
+var actions = map[string]func([]string) error{
 	"config": commands.Config,
+	"init":   commands.Init,
 }
 
 func main() {
@@ -28,5 +28,8 @@ func main() {
 		return
 	}
 
-	actions[os.Args[1]](args)
+	err := actions[os.Args[1]](args)
+	if err != nil {
+		fmt.Println("error:", err)
+	}
 }

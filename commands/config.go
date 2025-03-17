@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -12,7 +13,8 @@ import (
 
 var allowedFlags = []string{"--get", "--global"}
 
-func Config(args []string) {
+func Config(args []string) error {
+	// TODO: rewrite using flag package
 	flags := []string{}
 
 	for _, arg := range args {
@@ -24,7 +26,7 @@ func Config(args []string) {
 	for _, flag := range flags {
 		if !slices.Contains(allowedFlags, flag) {
 			fmt.Println("invalid flag:", flag)
-			return
+			return errors.New("invalid flag:" + flag)
 		}
 	}
 
@@ -45,33 +47,35 @@ func Config(args []string) {
 	}
 
 	if err != nil {
-		fmt.Println("error:", err)
-		return
+		return err
 	}
 
-	configPath := filepath.Join(dir, ".notgitconfig")
+	var configPath string
+	if scope == "global" {
+		configPath = filepath.Join(dir, ".notgitconfig")
+	} else {
+		configPath = filepath.Join(dir, "/.notgit/config")
+	}
+
 	_, err = os.Stat(configPath)
 	configFileExists := err == nil
 
 	if !configFileExists && scope == "global" {
 		file, err := os.Create(configPath)
 		if err != nil {
-			fmt.Println(err)
-			return
+			return err
 		}
 		defer file.Close()
 	}
 
 	if !configFileExists && scope == "local" {
-		fmt.Println("notgit repository not initialized")
-		return
+		fmt.Println("")
+		return errors.New("not in a notgit directory")
 	}
-	fmt.Println(dir)
 
 	fileMap, err := utils.ParseConfig(filepath.Join(dir, ".notgitconfig"))
 	if err != nil {
-		fmt.Println(err)
-		return
+		return err
 	}
 
 	n := len(args)
@@ -79,56 +83,42 @@ func Config(args []string) {
 		arg1, arg2 := args[n-2], args[n-1]
 
 		if arg1[0] == '-' || arg2[0] == '-' {
-			fmt.Println("invalid arguments")
-			return
+			return errors.New("invalid arguments")
 		}
 
 		toSet := strings.Split(arg1, ".")
 		if len(toSet) != 2 {
-			fmt.Println("invalid arguments")
-			return
+			return errors.New("invalid arguments")
 		}
 
 		section, key := toSet[0], toSet[1]
 
-		if fileMap[section] == nil {
-			fileMap[section] = make(map[string]string)
+		err = utils.UpdateConfig(configPath, section, key, arg2)
+		if err != nil {
+			return err
 		}
 
-		fileMap[section][key] = arg2
-		content := []string{}
-
-		for section := range fileMap {
-			content = append(content, "["+section+"]")
-
-			for key, value := range fileMap[section] {
-				content = append(content, key+" = "+value)
-			}
-		}
-
-		os.WriteFile(configPath, []byte(strings.Join(content, "\n")), 0644)
-		return
+		return nil
 	}
 
 	arg := args[n-1]
 
 	if arg[0] == '-' {
-		fmt.Println("invalid arguments")
-		return
+		return errors.New("invalid arguments")
 	}
 
 	toGet := strings.Split(arg, ".")
 	if len(toGet) != 2 {
-		fmt.Println("invalid arguments")
-		return
+		return errors.New("invalid arguments")
 	}
 
 	section, key := toGet[0], toGet[1]
 
 	value, ok := fileMap[section][key]
 	if !ok {
-		return
+		return errors.New("key not found")
 	}
 
 	fmt.Println(value)
+	return nil
 }
