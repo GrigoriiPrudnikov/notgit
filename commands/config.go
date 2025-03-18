@@ -2,45 +2,49 @@ package commands
 
 import (
 	"errors"
+	"flag"
 	"fmt"
+	"notgit/utils"
 	"os"
 	"path/filepath"
-	"slices"
 	"strings"
-
-	"notgit/utils"
 )
 
-var allowedFlags = []string{"--get", "--global"}
+func Config() error {
+	// TODO: add Usage func
+	var global, get, unset bool
 
-func Config(args []string) error {
-	// TODO: rewrite using flag package
-	flags := []string{}
+	flagSet := flag.NewFlagSet("config", flag.ExitOnError)
+	flagSet.BoolVar(&global, "global", false, "Use global config")
+	flagSet.BoolVar(&get, "get", false, "Get value")
+	flagSet.BoolVar(&unset, "unset", false, "Unset value")
 
-	for _, arg := range args {
-		if arg[0] == '-' {
-			flags = append(flags, arg)
-		}
+	flagSet.Parse(os.Args[2:])
+	args := flagSet.Args()
+
+	fmt.Println(len(args))
+	fmt.Println(global)
+	fmt.Println(get)
+	fmt.Println(unset)
+
+	var err error
+
+	if get {
+		err = getValue(args, global)
+	} else if unset {
+		err = unsetValue(args, global)
+	} else {
+		err = setValue(args, global)
 	}
 
-	for _, flag := range flags {
-		if !slices.Contains(allowedFlags, flag) {
-			fmt.Println("invalid flag:", flag)
-			return errors.New("invalid flag:" + flag)
-		}
-	}
+	return err
+}
 
+func setValue(args []string, global bool) error {
 	var dir string
 	var err error
-	mode := "set"
-	scope := "local"
 
-	if slices.Contains(flags, "--get") {
-		mode = "get"
-	}
-
-	if slices.Contains(flags, "--global") {
-		scope = "global"
+	if global {
 		dir, err = os.UserHomeDir()
 	} else {
 		dir, err = os.Getwd()
@@ -51,74 +55,36 @@ func Config(args []string) error {
 	}
 
 	var configPath string
-	if scope == "global" {
+	if global {
 		configPath = filepath.Join(dir, ".notgitconfig")
 	} else {
 		configPath = filepath.Join(dir, "/.notgit/config")
-	}
 
-	_, err = os.Stat(configPath)
-	configFileExists := err == nil
-
-	if !configFileExists && scope == "global" {
-		file, err := os.Create(configPath)
-		if err != nil {
-			return err
+		if _, err := os.Stat(configPath); os.IsNotExist(err) {
+			return errors.New("not a notgit repository")
 		}
-		defer file.Close()
 	}
 
-	if !configFileExists && scope == "local" {
-		fmt.Println("")
-		return errors.New("not in a notgit directory")
-	}
+	parts := strings.Split(args[0], ".")
+	section, key := parts[0], parts[1]
 
-	fileMap, err := utils.ParseConfig(filepath.Join(dir, ".notgitconfig"))
+	value := args[1]
+
+	config, err := utils.ParseConfig(configPath)
 	if err != nil {
 		return err
 	}
 
-	n := len(args)
-	if mode == "set" {
-		arg1, arg2 := args[n-2], args[n-1]
+	config[section][key] = value
 
-		if arg1[0] == '-' || arg2[0] == '-' {
-			return errors.New("invalid arguments")
-		}
-
-		toSet := strings.Split(arg1, ".")
-		if len(toSet) != 2 {
-			return errors.New("invalid arguments")
-		}
-
-		section, key := toSet[0], toSet[1]
-
-		err = utils.UpdateConfig(configPath, section, key, arg2)
-		if err != nil {
-			return err
-		}
-
-		return nil
+	err = utils.UpdateConfig(configPath, config)
+	if err != nil {
+		return err
 	}
 
-	arg := args[n-1]
-
-	if arg[0] == '-' {
-		return errors.New("invalid arguments")
-	}
-
-	toGet := strings.Split(arg, ".")
-	if len(toGet) != 2 {
-		return errors.New("invalid arguments")
-	}
-
-	section, key := toGet[0], toGet[1]
-
-	value, ok := fileMap[section][key]
-	if !ok {
-		return errors.New("key not found")
-	}
-
-	fmt.Println(value)
 	return nil
 }
+
+func getValue(args []string, global bool) error { return nil }
+
+func unsetValue(args []string, global bool) error { return nil }

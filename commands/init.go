@@ -16,7 +16,7 @@ var excludeContent = []string{
 	"# *~",
 }
 
-func Init(_args []string) error {
+func Init() error {
 	dir, err := os.Getwd()
 	if err != nil {
 		return err

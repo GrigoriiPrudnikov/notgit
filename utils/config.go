@@ -1,8 +1,6 @@
 package utils
 
 import (
-	"os"
-
 	"gopkg.in/ini.v1"
 )
 
@@ -29,29 +27,16 @@ func ParseConfig(path string) (map[string]map[string]string, error) {
 	return result, nil
 }
 
-func UpdateConfig(path string, section string, key string, value string) error {
-	configExists := false
-	if _, err := os.Stat(path); os.IsExist(err) {
-		configExists = true
-	}
+func UpdateConfig(path string, c map[string]map[string]string) error {
+	config := ini.Empty()
 
-	var config *ini.File
-	var err error
-
-	if configExists {
-		config, err = ini.Load(path)
-		if err != nil {
-			return err
+	for section, keys := range c {
+		for key, value := range keys {
+			config.Section(section).Key(key).SetValue(value)
 		}
-	} else {
-		config = ini.Empty()
 	}
 
-	config.Section(section).Key(key).SetValue(value)
-	err = config.SaveTo(path)
-	if err != nil {
-		return err
-	}
+	err := config.SaveToIndent(path, "  ")
 
-	return nil
+	return err
 }
