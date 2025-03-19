@@ -1,10 +1,19 @@
 package utils
 
 import (
+	"errors"
+	"os"
+	"path/filepath"
+
 	"gopkg.in/ini.v1"
 )
 
-func ParseConfig(path string) (map[string]map[string]string, error) {
+func ParseConfig(global bool) (map[string]map[string]string, error) {
+	path, err := getConfigPath(global)
+	if err != nil {
+		return nil, err
+	}
+
 	cfg, err := ini.Load(path)
 	if err != nil {
 		return nil, err
@@ -27,7 +36,12 @@ func ParseConfig(path string) (map[string]map[string]string, error) {
 	return result, nil
 }
 
-func UpdateConfig(path string, c map[string]map[string]string) error {
+func UpdateConfig(c map[string]map[string]string, global bool) error {
+	path, err := getConfigPath(global)
+	if err != nil {
+		return err
+	}
+
 	config := ini.Empty()
 
 	for section, keys := range c {
@@ -36,7 +50,33 @@ func UpdateConfig(path string, c map[string]map[string]string) error {
 		}
 	}
 
-	err := config.SaveToIndent(path, "  ")
+	err = config.SaveToIndent(path, "  ")
 
 	return err
+}
+
+func getConfigPath(global bool) (string, error) {
+	var dir string
+	var err error
+
+	if global {
+		dir, err = os.UserHomeDir()
+	} else {
+		dir, err = os.Getwd()
+	}
+
+	if err != nil {
+		return "", err
+	}
+
+	configPath := filepath.Join(dir, ".notgitconfig")
+	if !global {
+		configPath = filepath.Join(dir, ".notgit/config")
+
+		if _, err := os.Stat(configPath); os.IsNotExist(err) {
+			return "", errors.New("not a notgit repository")
+		}
+	}
+
+	return configPath, nil
 }

@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"notgit/utils"
 	"os"
-	"path/filepath"
 	"strings"
 )
 
@@ -22,11 +21,6 @@ func Config() error {
 	flagSet.Parse(os.Args[2:])
 	args := flagSet.Args()
 
-	fmt.Println(len(args))
-	fmt.Println(global)
-	fmt.Println(get)
-	fmt.Println(unset)
-
 	var err error
 
 	if get {
@@ -40,44 +34,24 @@ func Config() error {
 	return err
 }
 
+// TODO: move these functions to its own files
 func setValue(args []string, global bool) error {
-	var dir string
-	var err error
-
-	if global {
-		dir, err = os.UserHomeDir()
-	} else {
-		dir, err = os.Getwd()
-	}
-
-	if err != nil {
-		return err
-	}
-
-	var configPath string
-	if global {
-		configPath = filepath.Join(dir, ".notgitconfig")
-	} else {
-		configPath = filepath.Join(dir, "/.notgit/config")
-
-		if _, err := os.Stat(configPath); os.IsNotExist(err) {
-			return errors.New("not a notgit repository")
-		}
+	if len(args) != 2 {
+		return errors.New("invalid arguments")
 	}
 
 	parts := strings.Split(args[0], ".")
 	section, key := parts[0], parts[1]
-
 	value := args[1]
 
-	config, err := utils.ParseConfig(configPath)
+	config, err := utils.ParseConfig(global)
 	if err != nil {
 		return err
 	}
 
 	config[section][key] = value
 
-	err = utils.UpdateConfig(configPath, config)
+	err = utils.UpdateConfig(config, global)
 	if err != nil {
 		return err
 	}
@@ -85,6 +59,48 @@ func setValue(args []string, global bool) error {
 	return nil
 }
 
-func getValue(args []string, global bool) error { return nil }
+func getValue(args []string, global bool) error {
+	if len(args) != 1 {
+		return errors.New("invalid arguments")
+	}
 
-func unsetValue(args []string, global bool) error { return nil }
+	parts := strings.Split(args[0], ".")
+	section, key := parts[0], parts[1]
+
+	config, err := utils.ParseConfig(global)
+	if err != nil {
+		return err
+	}
+
+	value, ok := config[section][key]
+	if !ok {
+		return errors.New("key not found")
+	}
+
+	fmt.Println(value)
+
+	return nil
+}
+
+func unsetValue(args []string, global bool) error {
+	if len(args) != 1 {
+		return errors.New("invalid arguments")
+	}
+
+	parts := strings.Split(args[0], ".")
+	section, key := parts[0], parts[1]
+
+	config, err := utils.ParseConfig(global)
+	if err != nil {
+		return err
+	}
+
+	delete(config[section], key)
+
+	err = utils.UpdateConfig(config, global)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}

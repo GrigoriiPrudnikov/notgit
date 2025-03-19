@@ -27,13 +27,7 @@ func Init() error {
 		return nil
 	}
 
-	homeDir, err := os.UserHomeDir()
-	if err != nil {
-		fmt.Println(err)
-		os.Exit(1)
-	}
-
-	config, err := utils.ParseConfig(homeDir + "/.notgitconfig")
+	config, err := utils.ParseConfig(true)
 	if err != nil {
 		return err
 	}
