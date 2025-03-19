@@ -4,6 +4,7 @@ import (
 	"errors"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"gopkg.in/ini.v1"
 )
@@ -79,4 +80,22 @@ func getConfigPath(global bool) (string, error) {
 	}
 
 	return configPath, nil
+}
+
+func GetSectionAndKey(args []string) (string, string, error) {
+	if len(args) != 2 {
+		return "", "", errors.New("invalid arguments")
+	}
+
+	parts := strings.Split(args[0], ".")
+	if len(parts) != 2 {
+		return "", "", errors.New("invalid arguments")
+	}
+
+	section, key := parts[0], parts[1]
+	if section == "" || key == "" {
+		return "", "", errors.New("invalid arguments")
+	}
+
+	return section, key, nil
 }
