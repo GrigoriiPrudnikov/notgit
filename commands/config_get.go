@@ -23,7 +23,7 @@ func getValue(args []string, global bool) error {
 
 	value, ok := config[section][key]
 	if !ok {
-		return errors.New("key not found")
+		return nil
 	}
 
 	fmt.Println(value)

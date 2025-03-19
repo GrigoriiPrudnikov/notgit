@@ -1,49 +1,54 @@
 package commands
 
 import (
+	"errors"
 	"flag"
-	"fmt"
 	"os"
 )
 
 func Config() error {
-	// TODO: add Usage func
-	// TODO: add --local flag
-	// TODO: add --add flag
-	// TODO: add --get-all flag
-	// TODO: add --unset-all flag
-	var help, global, get, unset bool
+	var global, local, get, getAll, unset, unsetAll, add, help bool
 
 	flagSet := flag.NewFlagSet("config", flag.ExitOnError)
 	flagSet.BoolVar(&global, "global", false, "Use global config")
+	flagSet.BoolVar(&local, "local", false, "Use local config")
 	flagSet.BoolVar(&get, "get", false, "Get value")
+	flagSet.BoolVar(&getAll, "get-all", false, "Get all values")
 	flagSet.BoolVar(&unset, "unset", false, "Unset value")
+	flagSet.BoolVar(&unsetAll, "unset-all", false, "Unset all values")
+	flagSet.BoolVar(&add, "add", false, "Add value")
 	flagSet.BoolVar(&help, "help", false, "Show help")
 
 	flagSet.Parse(os.Args[2:])
 	args := flagSet.Args()
 
+	if global && local {
+		return errors.New("--global and --local flags can't be used together")
+	}
+
+	if local {
+		global = false
+	}
+
 	if help {
-		usage()
+		// add help function
 		return nil
 	}
 	if get {
 		return getValue(args, global)
 	}
+	if getAll {
+		return getAllValues(args)
+	}
 	if unset {
 		return unsetValue(args, global)
 	}
+	if unsetAll {
+		return unsetAllValues(args)
+	}
+	if add {
+		return setValue(args, global)
+	}
 
 	return setValue(args, global)
-}
-
-func usage() {
-	fmt.Println(`usage: notgit config [<options>]
-
-Config file location:
-    --global    use global config file
-    --local     use local config file
-Action:
-    --get       get value
-    --unset     unset value`)
 }
