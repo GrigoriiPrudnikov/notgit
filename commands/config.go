@@ -7,7 +7,7 @@ import (
 )
 
 func Config() error {
-	var global, local, get, getAll, unset, unsetAll, add, help bool
+	var global, local, get, getAll, unset, unsetAll, add, list, help bool
 
 	flagSet := flag.NewFlagSet("config", flag.ExitOnError)
 	flagSet.BoolVar(&global, "global", false, "Use global config")
@@ -17,6 +17,7 @@ func Config() error {
 	flagSet.BoolVar(&unset, "unset", false, "Unset value")
 	flagSet.BoolVar(&unsetAll, "unset-all", false, "Unset all values")
 	flagSet.BoolVar(&add, "add", false, "Add value")
+	flagSet.BoolVar(&list, "list", false, "List values")
 	flagSet.BoolVar(&help, "help", false, "Show help")
 
 	flagSet.Parse(os.Args[2:])
@@ -48,6 +49,9 @@ func Config() error {
 	}
 	if add {
 		return setValue(args, global)
+	}
+	if list {
+		return ListValues(global)
 	}
 
 	return setValue(args, global)
