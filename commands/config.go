@@ -6,6 +6,11 @@ import (
 	"os"
 )
 
+type action struct {
+	flag *bool
+	fn   func() error
+}
+
 func Config() error {
 	var global, local, get, getAll, unset, unsetAll, add, list, help bool
 
@@ -31,27 +36,19 @@ func Config() error {
 		global = false
 	}
 
-	if help {
-		// add help function
-		return nil
+	actions := []action{
+		{&get, func() error { return getValue(args, global) }},
+		{&getAll, func() error { return getAllValues(args) }},
+		{&unset, func() error { return unsetValue(args, global) }},
+		{&unsetAll, func() error { return unsetAllValues(args) }},
+		{&add, func() error { return setValue(args, global) }},
+		{&list, func() error { return ListValues(global) }},
 	}
-	if get {
-		return getValue(args, global)
-	}
-	if getAll {
-		return getAllValues(args)
-	}
-	if unset {
-		return unsetValue(args, global)
-	}
-	if unsetAll {
-		return unsetAllValues(args)
-	}
-	if add {
-		return setValue(args, global)
-	}
-	if list {
-		return ListValues(global)
+
+	for _, a := range actions {
+		if *a.flag {
+			return a.fn()
+		}
 	}
 
 	return setValue(args, global)
