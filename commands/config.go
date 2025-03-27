@@ -3,6 +3,8 @@ package commands
 import (
 	"errors"
 	"flag"
+	"fmt"
+	"notgit/utils"
 	"os"
 )
 
@@ -12,21 +14,22 @@ type action struct {
 }
 
 func Config() error {
+	// TODO: somehow rewrite
 	var global, local, get, getAll, unset, unsetAll, add, list, help bool
 
-	flagSet := flag.NewFlagSet("config", flag.ExitOnError)
-	flagSet.BoolVar(&global, "global", false, "Use global config")
-	flagSet.BoolVar(&local, "local", false, "Use local config")
-	flagSet.BoolVar(&get, "get", false, "Get value")
-	flagSet.BoolVar(&getAll, "get-all", false, "Get all values")
-	flagSet.BoolVar(&unset, "unset", false, "Unset value")
-	flagSet.BoolVar(&unsetAll, "unset-all", false, "Unset all values")
-	flagSet.BoolVar(&add, "add", false, "Add value")
-	flagSet.BoolVar(&list, "list", false, "List values")
-	flagSet.BoolVar(&help, "help", false, "Show help")
+	fs := flag.NewFlagSet("config", flag.ExitOnError)
+	fs.BoolVar(&global, "global", false, "Use global config")
+	fs.BoolVar(&local, "local", false, "Use local config")
+	fs.BoolVar(&get, "get", false, "Get value")
+	fs.BoolVar(&getAll, "get-all", false, "Get all values")
+	fs.BoolVar(&unset, "unset", false, "Unset value")
+	fs.BoolVar(&unsetAll, "unset-all", false, "Unset all values")
+	fs.BoolVar(&add, "add", false, "Add value")
+	fs.BoolVar(&list, "list", false, "List values")
+	fs.BoolVar(&help, "help", false, "Show help")
 
-	flagSet.Parse(os.Args[2:])
-	args := flagSet.Args()
+	fs.Parse(os.Args[2:])
+	args := fs.Args()
 
 	if global && local {
 		return errors.New("--global and --local flags can't be used together")
@@ -52,4 +55,117 @@ func Config() error {
 	}
 
 	return setValue(args, global)
+}
+
+func getValue(args []string, global bool) error {
+	if len(args) != 1 {
+		return errors.New("invalid arguments")
+	}
+
+	section, key, err := utils.GetSectionAndKey(args)
+	if err != nil {
+		return err
+	}
+
+	config, err := utils.ParseConfig(global)
+	if err != nil {
+		return err
+	}
+
+	value, ok := config[section][key]
+	if !ok {
+		return nil
+	}
+
+	fmt.Println(value)
+
+	return nil
+}
+
+func getAllValues(args []string) error {
+	if len(args) != 1 {
+		return errors.New("invalid arguments")
+	}
+
+	getValue(args, false)
+	getValue(args, true)
+
+	return nil
+}
+
+func ListValues(global bool) error {
+	config, err := utils.ParseConfig(global)
+	if err != nil {
+		return err
+	}
+
+	for section, values := range config {
+		for key, value := range values {
+			fmt.Printf("%s.%s = %s\n", section, key, value)
+		}
+	}
+
+	return nil
+}
+
+func setValue(args []string, global bool) error {
+	if len(args) != 2 {
+		return errors.New("invalid arguments")
+	}
+
+	section, key, err := utils.GetSectionAndKey(args)
+	if err != nil {
+		return err
+	}
+	value := args[1]
+
+	config, err := utils.ParseConfig(global)
+	if err != nil {
+		return err
+	}
+
+	config[section][key] = value
+
+	err = utils.UpdateConfig(config, global)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func unsetValue(args []string, global bool) error {
+	if len(args) != 1 {
+		return errors.New("invalid arguments")
+	}
+
+	section, key, err := utils.GetSectionAndKey(args)
+	if err != nil {
+		return err
+	}
+
+	config, err := utils.ParseConfig(global)
+	if err != nil {
+		return err
+	}
+
+	delete(config[section], key)
+
+	err = utils.UpdateConfig(config, global)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func unsetAllValues(args []string) error {
+	if len(args) != 1 {
+		return errors.New("invalid arguments")
+	}
+
+	unsetValue(args, false)
+	unsetValue(args, true)
+
+	return nil
 }

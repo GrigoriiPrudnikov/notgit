@@ -9,6 +9,7 @@ import (
 var command = map[string]func() error{
 	"config": commands.Config,
 	"init":   commands.Init,
+	"add":    commands.Add,
 }
 
 func main() {
@@ -19,7 +20,12 @@ func main() {
 
 	_, exists := command[os.Args[1]]
 	if !exists {
-		fmt.Println("Command not found")
+		// TODO: add help like this:
+		// The most similar commands are
+		//    diff
+		//    fsck
+
+		fmt.Printf("notgit: %s is not a git command. See 'notgit --help'.\n", os.Args[1])
 		return
 	}
 
