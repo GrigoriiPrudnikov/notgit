@@ -1,8 +1,6 @@
 package commands
 
 import (
-	"bytes"
-	"compress/zlib"
 	"errors"
 	"flag"
 	"fmt"
@@ -55,19 +53,10 @@ func Add() error {
 	return nil
 }
 
-var alwaysIgnoredPaths = []string{".git", ".notgit"}
-
-// TODO: split to addFile and addDir
 func add(path string, force bool) error {
 	info, err := os.Stat(path)
 	if os.IsNotExist(err) {
 		return err
-	}
-
-	name := filepath.Base(path)
-	if slices.Contains(alwaysIgnoredPaths, name) {
-		fmt.Println("ignored", path)
-		return nil
 	}
 
 	if utils.Ignored(path) && !force {
@@ -76,36 +65,30 @@ func add(path string, force bool) error {
 	}
 
 	if info.IsDir() {
-		if info.Name() == ".notgit" {
-			return nil
-		}
-
-		entries, err := os.ReadDir(path)
-		if err != nil {
-			return err
-		}
-
-		for _, entry := range entries {
-			entryPath := filepath.Join(path, entry.Name())
-			add(entryPath, force)
-		}
-
-		return nil
+		return addDir(path, force)
 	}
 
-	workingDir, err := os.Getwd()
+	return addFile(path, force)
+}
+
+func addDir(path string, force bool) error {
+	entries, err := os.ReadDir(path)
 	if err != nil {
 		return err
 	}
 
-	indexPath := filepath.Join(workingDir, ".notgit", "index")
+	for _, entry := range entries {
+		entryPath := filepath.Join(path, entry.Name())
+		add(entryPath, force)
+	}
 
-	_, err = os.Stat(indexPath)
-	if os.IsNotExist(err) {
-		err = os.WriteFile(indexPath, []byte(""), 0644)
-		if err != nil {
-			return err
-		}
+	return nil
+}
+
+func addFile(path string, force bool) error {
+	wd, err := os.Getwd()
+	if err != nil {
+		return err
 	}
 
 	b, err := os.ReadFile(path)
@@ -118,13 +101,45 @@ func add(path string, force bool) error {
 		return err
 	}
 
-	// dir := filepath.Join(workingDir, ".notgit", "objects", hex[:2])
-	// fileName := hex[2:]
+	indexPath := filepath.Join(wd, ".notgit", "index")
 
-	var compressed bytes.Buffer
-	w := zlib.NewWriter(&compressed)
-	w.Write(b)
-	w.Close()
+	_, err = os.Stat(indexPath)
+	if os.IsNotExist(err) {
+		err = os.WriteFile(indexPath, []byte(""), 0644)
+		if err != nil {
+			return err
+		}
+	}
 
-	return nil
+	hash := utils.Hash(b)
+
+	stagedFiles, err := utils.ParseIndex()
+	if err != nil {
+		return err
+	}
+
+	stagedFile := utils.StagedFile{
+		Permission: "100644",
+		Hash:       hash,
+		Name:       path,
+	}
+
+	// check for missing files and update if exists
+	for i, file := range stagedFiles {
+		if _, err := os.Stat(file.Name); os.IsNotExist(err) {
+			stagedFiles = slices.Delete(stagedFiles, i, i+1)
+			continue
+		}
+
+		if file.Name == path {
+			stagedFiles[i] = stagedFile
+			err = utils.SetIndex(stagedFiles)
+			return err
+		}
+	}
+
+	stagedFiles = append(stagedFiles, stagedFile)
+	err = utils.SetIndex(stagedFiles)
+
+	return err
 }

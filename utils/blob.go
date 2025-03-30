@@ -3,18 +3,11 @@ package utils
 import (
 	"bytes"
 	"compress/zlib"
-	"crypto/sha256"
-	"fmt"
 	"os"
 	"path/filepath"
 )
 
 func CreateBlob(b []byte) error {
-	header := fmt.Sprintf("blob %d\x00\n", len(b))
-	blob := append([]byte(header), b...)
-	hash := sha256.Sum256(blob)
-	hex := fmt.Sprintf("%x", hash)
-
 	wd, err := os.Getwd()
 	if err != nil {
 		return err
@@ -29,8 +22,10 @@ func CreateBlob(b []byte) error {
 		}
 	}
 
-	dir := filepath.Join(objects, hex[:2])
-	file := filepath.Join(dir, hex[2:])
+	hash := Hash(b)
+
+	dir := filepath.Join(objects, hash[:2])
+	file := filepath.Join(dir, hash[2:])
 
 	if _, err := os.Stat(dir); os.IsNotExist(err) {
 		err = os.Mkdir(dir, 0755)
