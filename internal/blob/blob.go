@@ -1,4 +1,4 @@
-package utils
+package blob
 
 import (
 	"bytes"
@@ -7,7 +7,9 @@ import (
 	"path/filepath"
 )
 
-func CreateBlob(b []byte) error {
+// TODO: add blob type (type, size, name, content, etc)
+// TODO: add compress util function
+func Create(b []byte) error {
 	wd, err := os.Getwd()
 	if err != nil {
 		return err

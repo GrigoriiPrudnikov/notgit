@@ -4,7 +4,7 @@ import (
 	"errors"
 	"flag"
 	"fmt"
-	"notgit/utils"
+	"notgit/internal/config"
 	"os"
 )
 
@@ -62,12 +62,12 @@ func getValue(args []string, global bool) error {
 		return errors.New("invalid arguments")
 	}
 
-	section, key, err := utils.GetSectionAndKey(args)
+	section, key, err := config.GetSectionAndKey(args)
 	if err != nil {
 		return err
 	}
 
-	config, err := utils.ParseConfig(global)
+	config, err := config.Parse(global)
 	if err != nil {
 		return err
 	}
@@ -94,7 +94,7 @@ func getAllValues(args []string) error {
 }
 
 func ListValues(global bool) error {
-	config, err := utils.ParseConfig(global)
+	config, err := config.Parse(global)
 	if err != nil {
 		return err
 	}
@@ -113,20 +113,20 @@ func setValue(args []string, global bool) error {
 		return errors.New("invalid arguments")
 	}
 
-	section, key, err := utils.GetSectionAndKey(args)
+	section, key, err := config.GetSectionAndKey(args)
 	if err != nil {
 		return err
 	}
 	value := args[1]
 
-	config, err := utils.ParseConfig(global)
+	cfg, err := config.Parse(global)
 	if err != nil {
 		return err
 	}
 
-	config[section][key] = value
+	cfg[section][key] = value
 
-	err = utils.UpdateConfig(config, global)
+	err = config.Set(cfg, global)
 	if err != nil {
 		return err
 	}
@@ -139,19 +139,19 @@ func unsetValue(args []string, global bool) error {
 		return errors.New("invalid arguments")
 	}
 
-	section, key, err := utils.GetSectionAndKey(args)
+	section, key, err := config.GetSectionAndKey(args)
 	if err != nil {
 		return err
 	}
 
-	config, err := utils.ParseConfig(global)
+	cfg, err := config.Parse(global)
 	if err != nil {
 		return err
 	}
 
-	delete(config[section], key)
+	delete(cfg[section], key)
 
-	err = utils.UpdateConfig(config, global)
+	err = config.Set(cfg, global)
 	if err != nil {
 		return err
 	}

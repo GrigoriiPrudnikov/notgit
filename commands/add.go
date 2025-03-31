@@ -4,6 +4,8 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"notgit/internal/blob"
+	"notgit/internal/indexfile"
 	"notgit/utils"
 	"os"
 	"path/filepath"
@@ -96,7 +98,7 @@ func addFile(path string, force bool) error {
 		return err
 	}
 
-	err = utils.CreateBlob(b)
+	err = blob.Create(b)
 	if err != nil {
 		return err
 	}
@@ -111,14 +113,14 @@ func addFile(path string, force bool) error {
 		}
 	}
 
-	hash := utils.Hash(b)
+	hash := blob.Hash(b)
 
-	stagedFiles, err := utils.ParseIndex()
+	stagedFiles, err := indexfile.Parse()
 	if err != nil {
 		return err
 	}
 
-	stagedFile := utils.StagedFile{
+	stagedFile := indexfile.StagedFile{
 		Permission: "100644",
 		Hash:       hash,
 		Name:       path,
@@ -133,13 +135,13 @@ func addFile(path string, force bool) error {
 
 		if file.Name == path {
 			stagedFiles[i] = stagedFile
-			err = utils.SetIndex(stagedFiles)
+			err = indexfile.Set(stagedFiles)
 			return err
 		}
 	}
 
 	stagedFiles = append(stagedFiles, stagedFile)
-	err = utils.SetIndex(stagedFiles)
+	err = indexfile.Set(stagedFiles)
 
 	return err
 }

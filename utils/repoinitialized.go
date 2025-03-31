@@ -1,8 +1,6 @@
 package utils
 
-import (
-	"os"
-)
+import "os"
 
 func RepoInitialized(dir string) bool {
 	notgitdir := dir + "/.notgit"

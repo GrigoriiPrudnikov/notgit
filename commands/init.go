@@ -2,6 +2,7 @@ package commands
 
 import (
 	"fmt"
+	"notgit/internal/config"
 	"notgit/utils"
 	"os"
 	"strings"
@@ -27,7 +28,7 @@ func Init() error {
 		return nil
 	}
 
-	config, err := utils.ParseConfig(true)
+	config, err := config.Parse(true)
 	if err != nil {
 		return err
 	}
