@@ -1,15 +1,31 @@
 package blob
 
 import (
-	"bytes"
-	"compress/zlib"
 	"os"
 	"path/filepath"
 )
 
-// TODO: add blob type (type, size, name, content, etc)
-// TODO: add compress util function
-func Create(b []byte) error {
+// Add tree blob
+func Create(path string) (Blob, error) {
+	b, err := os.ReadFile(path)
+	if err != nil {
+		return Blob{}, err
+	}
+
+	hash := Hash(b)
+	content := Compress(b, "blob")
+
+	blob := Blob{
+		Type:    "blob",
+		Hash:    hash,
+		Content: content,
+		Size:    len(b),
+	}
+
+	return blob, err
+}
+
+func Write(blob Blob) error {
 	wd, err := os.Getwd()
 	if err != nil {
 		return err
@@ -24,7 +40,7 @@ func Create(b []byte) error {
 		}
 	}
 
-	hash := Hash(b)
+	hash := blob.Hash
 
 	dir := filepath.Join(objects, hash[:2])
 	file := filepath.Join(dir, hash[2:])
@@ -40,12 +56,7 @@ func Create(b []byte) error {
 		return nil
 	}
 
-	var compressed bytes.Buffer
-	w := zlib.NewWriter(&compressed)
-	w.Write(b)
-	w.Close()
-
-	err = os.WriteFile(file, compressed.Bytes(), 0644)
+	err = os.WriteFile(file, blob.Content, 0644)
 
 	return err
 }

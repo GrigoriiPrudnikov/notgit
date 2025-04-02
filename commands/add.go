@@ -93,12 +93,12 @@ func addFile(path string, force bool) error {
 		return err
 	}
 
-	b, err := os.ReadFile(path)
+	b, err := blob.Create(path)
 	if err != nil {
 		return err
 	}
 
-	err = blob.Create(b)
+	err = blob.Write(b)
 	if err != nil {
 		return err
 	}
@@ -113,7 +113,7 @@ func addFile(path string, force bool) error {
 		}
 	}
 
-	hash := blob.Hash(b)
+	hash := b.Hash
 
 	stagedFiles, err := indexfile.Parse()
 	if err != nil {
