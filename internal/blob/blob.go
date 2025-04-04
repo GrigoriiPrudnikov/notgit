@@ -6,26 +6,31 @@ import (
 )
 
 // Add tree blob
-func Create(path string) (Blob, error) {
+func CreateFile(path string) (File, error) {
 	b, err := os.ReadFile(path)
 	if err != nil {
-		return Blob{}, err
+		return File{}, err
 	}
 
 	hash := Hash(b)
 	content := Compress(b, "blob")
 
-	blob := Blob{
-		Type:    "blob",
+	info, err := os.Stat(path)
+	if err != nil {
+		return File{}, err
+	}
+
+	blob := File{
+		Mode:    info.Mode(),
+		Name:    info.Name(),
 		Hash:    hash,
 		Content: content,
-		Size:    len(b),
 	}
 
 	return blob, err
 }
 
-func Write(blob Blob) error {
+func (blob *File) Write() error {
 	wd, err := os.Getwd()
 	if err != nil {
 		return err

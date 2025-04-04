@@ -1,8 +1,10 @@
 package blob
 
-type Blob struct {
-	Type    string
+import "os"
+
+type File struct {
+	Mode    os.FileMode
+	Name    string
 	Hash    string
 	Content []byte
-	Size    int
 }
