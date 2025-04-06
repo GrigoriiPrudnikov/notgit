@@ -5,7 +5,6 @@ import (
 	"notgit/internal/blob"
 	"os"
 	"path/filepath"
-	"strconv"
 	"strings"
 )
 
@@ -36,15 +35,10 @@ func Parse() ([]blob.Blob, error) {
 			continue
 		}
 
-		mode, err := strconv.ParseInt(parts[0], 10, 32)
-		if err != nil {
-			return nil, err
-		}
-
 		stagedFiles = append(stagedFiles, blob.Blob{
-			Mode: os.FileMode(mode),
-			Hash: parts[1],
-			Path: parts[2],
+			Permission: parts[0],
+			Hash:       parts[1],
+			Path:       parts[2],
 		})
 	}
 

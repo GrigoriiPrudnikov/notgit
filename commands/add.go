@@ -3,7 +3,6 @@ package commands
 import (
 	"errors"
 	"flag"
-	"fmt"
 	"notgit/internal/blob"
 	"notgit/internal/indexfile"
 	"notgit/utils"
@@ -58,6 +57,7 @@ func Add() error {
 	return nil
 }
 
+// TODO: rewrite to trees
 func add(path string, force bool) error {
 	info, err := os.Stat(path)
 	if os.IsNotExist(err) {
@@ -124,7 +124,6 @@ func addFile(path string) error {
 
 	for _, staged := range stagedFiles {
 		if _, err := os.Stat(filepath.Join(wd, staged.Path)); os.IsNotExist(err) {
-			fmt.Println(filepath.Join(wd, staged.Path))
 			continue
 		}
 
@@ -133,13 +132,11 @@ func addFile(path string) error {
 		}
 
 		updated = append(updated, staged)
-		fmt.Printf("updated files: %v\n\n", updated)
 	}
 
 	updated = append(updated, b)
 
 	err = indexfile.Write(updated)
-	fmt.Println("added: " + path)
 
 	return err
 }

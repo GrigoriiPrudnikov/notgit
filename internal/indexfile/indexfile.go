@@ -5,7 +5,6 @@ import (
 	"notgit/internal/blob"
 	"os"
 	"path/filepath"
-	"strconv"
 )
 
 // TODO: rewrite to function AddToIndex with garbage collection
@@ -21,10 +20,8 @@ func Write(files []blob.Blob) error {
 	}
 
 	var b bytes.Buffer
-	for _, stagedFile := range files {
-		mode := strconv.FormatUint(uint64(stagedFile.Mode), 10)
-
-		b.WriteString(mode + " " + stagedFile.Hash + " " + stagedFile.Path + "\n")
+	for _, staged := range files {
+		b.WriteString(staged.Permission + " " + staged.Hash + " " + staged.Path + "\n")
 	}
 
 	err = os.WriteFile(indexPath, b.Bytes(), 0644)

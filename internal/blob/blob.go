@@ -1,12 +1,12 @@
 package blob
 
 import (
+	"fmt"
 	"notgit/utils"
 	"os"
 	"path/filepath"
 )
 
-// Add tree blob
 func Create(path string) (Blob, error) {
 	b, err := os.ReadFile(path)
 	if err != nil {
@@ -21,11 +21,13 @@ func Create(path string) (Blob, error) {
 		return Blob{}, err
 	}
 
+	permission := fmt.Sprintf("%o", info.Mode().Perm())
+
 	blob := Blob{
-		Mode:    info.Mode().Perm(),
-		Path:    path,
-		Hash:    hash,
-		Content: content,
+		Permission: permission,
+		Path:       path,
+		Hash:       hash,
+		Content:    content,
 	}
 
 	return blob, err
