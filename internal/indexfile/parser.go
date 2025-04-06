@@ -44,7 +44,7 @@ func Parse() ([]blob.Blob, error) {
 		stagedFiles = append(stagedFiles, blob.Blob{
 			Mode: os.FileMode(mode),
 			Hash: parts[1],
-			Name: parts[2],
+			Path: parts[2],
 		})
 	}
 

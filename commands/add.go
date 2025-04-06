@@ -9,7 +9,6 @@ import (
 	"notgit/utils"
 	"os"
 	"path/filepath"
-	"slices"
 )
 
 func Add() error {
@@ -66,29 +65,28 @@ func add(path string, force bool) error {
 	}
 
 	if utils.Ignored(path) && !force {
-		fmt.Println("ignored", path)
 		return nil
 	}
 
 	if info.IsDir() {
-		return addDir(path, force)
+		children, err := os.ReadDir(path)
+		if err != nil {
+			return err
+		}
+
+		for _, child := range children {
+			childPath := filepath.Join(path, child.Name())
+
+			err := add(childPath, force)
+			if err != nil {
+				return err
+			}
+		}
+
+		return nil
 	}
 
 	return addFile(path)
-}
-
-func addDir(path string, force bool) error {
-	entries, err := os.ReadDir(path)
-	if err != nil {
-		return err
-	}
-
-	for _, entry := range entries {
-		entryPath := filepath.Join(path, entry.Name())
-		add(entryPath, force)
-	}
-
-	return nil
 }
 
 func addFile(path string) error {
@@ -122,22 +120,26 @@ func addFile(path string) error {
 		return err
 	}
 
-	// check for missing files and update if exists
-	for i, file := range stagedFiles {
-		if _, err := os.Stat(file.Name); os.IsNotExist(err) {
-			stagedFiles = slices.Delete(stagedFiles, i, i+1)
+	var updated []blob.Blob
+
+	for _, staged := range stagedFiles {
+		if _, err := os.Stat(filepath.Join(wd, staged.Path)); os.IsNotExist(err) {
+			fmt.Println(filepath.Join(wd, staged.Path))
 			continue
 		}
 
-		if file.Name == path {
-			stagedFiles[i] = b
-			err = indexfile.Set(stagedFiles)
-			return err
+		if staged.Path == path {
+			continue
 		}
+
+		updated = append(updated, staged)
+		fmt.Printf("updated files: %v\n\n", updated)
 	}
 
-	stagedFiles = append(stagedFiles, b)
-	err = indexfile.Set(stagedFiles)
+	updated = append(updated, b)
+
+	err = indexfile.Write(updated)
+	fmt.Println("added: " + path)
 
 	return err
 }

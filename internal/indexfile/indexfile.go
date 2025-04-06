@@ -9,7 +9,7 @@ import (
 )
 
 // TODO: rewrite to function AddToIndex with garbage collection
-func Set(stagedFiles []blob.Blob) error {
+func Write(files []blob.Blob) error {
 	wd, err := os.Getwd()
 	if err != nil {
 		return err
@@ -21,10 +21,10 @@ func Set(stagedFiles []blob.Blob) error {
 	}
 
 	var b bytes.Buffer
-	for _, stagedFile := range stagedFiles {
-		mode := strconv.FormatUint(uint64(stagedFile.Mode), 8)
+	for _, stagedFile := range files {
+		mode := strconv.FormatUint(uint64(stagedFile.Mode), 10)
 
-		b.WriteString(mode + " " + stagedFile.Hash + " " + stagedFile.Name + "\n")
+		b.WriteString(mode + " " + stagedFile.Hash + " " + stagedFile.Path + "\n")
 	}
 
 	err = os.WriteFile(indexPath, b.Bytes(), 0644)

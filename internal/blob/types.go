@@ -4,7 +4,7 @@ import "os"
 
 type Blob struct {
 	Mode    os.FileMode
-	Name    string
+	Path    string
 	Hash    string
 	Content []byte
 }

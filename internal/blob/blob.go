@@ -22,8 +22,8 @@ func Create(path string) (Blob, error) {
 	}
 
 	blob := Blob{
-		Mode:    info.Mode(),
-		Name:    info.Name(),
+		Mode:    info.Mode().Perm(),
+		Path:    path,
 		Hash:    hash,
 		Content: content,
 	}
