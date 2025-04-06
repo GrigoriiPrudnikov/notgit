@@ -1,6 +1,7 @@
 package blob
 
 import (
+	"notgit/utils"
 	"os"
 	"path/filepath"
 )
@@ -13,19 +14,24 @@ func Create(path string) (Blob, error) {
 	}
 
 	hash := Hash(b)
-	content := Compress(b, "blob")
+	content := utils.Compress(b, "blob")
+
+	info, err := os.Stat(path)
+	if err != nil {
+		return Blob{}, err
+	}
 
 	blob := Blob{
-		Type:    "blob",
+		Mode:    info.Mode(),
+		Name:    info.Name(),
 		Hash:    hash,
 		Content: content,
-		Size:    len(b),
 	}
 
 	return blob, err
 }
 
-func Write(blob Blob) error {
+func (blob *Blob) Write() error {
 	wd, err := os.Getwd()
 	if err != nil {
 		return err

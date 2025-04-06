@@ -2,13 +2,15 @@ package indexfile
 
 import (
 	"bytes"
+	"notgit/internal/blob"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 )
 
-func Parse() ([]StagedFile, error) {
-	var stagedFiles []StagedFile
+func Parse() ([]blob.Blob, error) {
+	var stagedFiles []blob.Blob
 
 	wd, err := os.Getwd()
 	if err != nil {
@@ -34,10 +36,15 @@ func Parse() ([]StagedFile, error) {
 			continue
 		}
 
-		stagedFiles = append(stagedFiles, StagedFile{
-			Permission: parts[0],
-			Hash:       parts[1],
-			Name:       parts[2],
+		mode, err := strconv.ParseInt(parts[0], 10, 32)
+		if err != nil {
+			return nil, err
+		}
+
+		stagedFiles = append(stagedFiles, blob.Blob{
+			Mode: os.FileMode(mode),
+			Hash: parts[1],
+			Name: parts[2],
 		})
 	}
 

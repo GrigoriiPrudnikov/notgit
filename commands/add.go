@@ -44,6 +44,10 @@ func Add() error {
 		return errors.New("no arguments")
 	}
 
+	if all {
+		return add(".", force)
+	}
+
 	for _, arg := range args {
 		err := add(arg, force)
 
@@ -70,7 +74,7 @@ func add(path string, force bool) error {
 		return addDir(path, force)
 	}
 
-	return addFile(path, force)
+	return addFile(path)
 }
 
 func addDir(path string, force bool) error {
@@ -87,7 +91,7 @@ func addDir(path string, force bool) error {
 	return nil
 }
 
-func addFile(path string, force bool) error {
+func addFile(path string) error {
 	wd, err := os.Getwd()
 	if err != nil {
 		return err
@@ -98,7 +102,7 @@ func addFile(path string, force bool) error {
 		return err
 	}
 
-	err = blob.Write(b)
+	err = b.Write()
 	if err != nil {
 		return err
 	}
@@ -113,17 +117,9 @@ func addFile(path string, force bool) error {
 		}
 	}
 
-	hash := b.Hash
-
 	stagedFiles, err := indexfile.Parse()
 	if err != nil {
 		return err
-	}
-
-	stagedFile := indexfile.StagedFile{
-		Permission: "100644",
-		Hash:       hash,
-		Name:       path,
 	}
 
 	// check for missing files and update if exists
@@ -134,13 +130,13 @@ func addFile(path string, force bool) error {
 		}
 
 		if file.Name == path {
-			stagedFiles[i] = stagedFile
+			stagedFiles[i] = b
 			err = indexfile.Set(stagedFiles)
 			return err
 		}
 	}
 
-	stagedFiles = append(stagedFiles, stagedFile)
+	stagedFiles = append(stagedFiles, b)
 	err = indexfile.Set(stagedFiles)
 
 	return err
