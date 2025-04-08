@@ -100,11 +100,6 @@ func addFile(path string) error {
 		return err
 	}
 
-	err = b.Write()
-	if err != nil {
-		return err
-	}
-
 	indexPath := filepath.Join(wd, ".notgit", "index")
 
 	_, err = os.Stat(indexPath)

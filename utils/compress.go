@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"compress/zlib"
 	"fmt"
+	"io"
 )
 
 func Compress(b []byte, variant string) []byte {
@@ -18,6 +19,18 @@ func Compress(b []byte, variant string) []byte {
 	return compressed.Bytes()
 }
 
-func Decompress(b []byte) []byte {
-	return b
+func Decompress(b []byte) ([]byte, error) {
+	r, err := zlib.NewReader(bytes.NewReader(b))
+	if err != nil {
+		return nil, err
+	}
+	defer r.Close()
+
+	var out bytes.Buffer
+	_, err = io.Copy(&out, r)
+	if err != nil {
+		return nil, err
+	}
+
+	return out.Bytes(), nil
 }
