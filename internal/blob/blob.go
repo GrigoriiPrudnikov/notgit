@@ -25,7 +25,7 @@ func Create(path string) (Blob, error) {
 
 	blob := Blob{
 		Permission: permission,
-		Path:       path,
+		Path:       filepath.Base(path),
 		Hash:       hash,
 		Content:    content,
 	}

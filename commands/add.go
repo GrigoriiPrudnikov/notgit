@@ -96,6 +96,7 @@ func addFile(path string) error {
 	}
 
 	b, err := blob.Create(path)
+	b.Path = path
 	if err != nil {
 		return err
 	}

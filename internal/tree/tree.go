@@ -1,80 +1,85 @@
 package tree
 
 import (
+	"fmt"
+	"maps"
 	"notgit/internal/blob"
+	"notgit/internal/indexfile"
 	"os"
 	"path/filepath"
+	"slices"
 )
 
-func Create(path string) (Tree, error) {
-	wd, err := os.Getwd()
+var dirsMap = map[string][]blob.Blob{}
+
+// Returns tree with all staged files
+func Root() Tree {
+	index, err := indexfile.Parse()
 	if err != nil {
-		return Tree{}, err
+		return Tree{}
 	}
 
-	absolutePath := filepath.Join(wd, path)
+	for _, staged := range index {
+		staged.Path = filepath.Base(staged.Path)
+		dirsMap[staged.Path] = append(dirsMap[staged.Path], staged)
+	}
 
-	dir, err := os.ReadDir(absolutePath)
+	root, err := create("")
 	if err != nil {
+		return Tree{}
+	}
+
+	return root
+}
+
+func (t *Tree) Write() error {
+	return nil
+}
+
+func create(path string) (Tree, error) {
+	info, err := os.Stat(path)
+	if os.IsNotExist(err) {
 		return Tree{}, err
 	}
 
 	root := Tree{
-		Path: filepath.Base(path),
+		Path:       filepath.Base(path),
+		Permission: fmt.Sprintf("%o", info.Mode().Perm()),
 	}
 
-	// if files != nil {
-	// 	// check if file in subtree
-	// 	for _, file := range files {
-	// 		parts := strings.SplitN(file, "/", 2)
-	// 		if len(parts) == 2 {
-	// 			subtree, err := Create(parts[0], []string{parts[1]})
-	// 			if err != nil {
-	// 				return Tree{}, err
-	// 			}
-	//
-	// 			root.SubTrees = append(root.SubTrees, &subtree)
-	// 			continue
-	// 		}
-	//
-	// 		blob, err := blob.Create(filepath.Join(path, file))
-	// 		if err != nil {
-	// 			return Tree{}, err
-	// 		}
-	//
-	// 		root.Blobs = append(root.Blobs, blob)
-	// 		continue
-	// 	}
-	//
-	// 	return Tree{}, errors.New("not implemented")
-	// }
+	blobs := dirsMap[path]
+	for _, blob := range blobs {
+		root.Blobs = append(root.Blobs, blob)
+	}
 
-	for _, entry := range dir {
-		if entry.IsDir() {
-			subTree, err := Create(filepath.Join(path, entry.Name()))
+	children, err := os.ReadDir(path)
+	if err != nil {
+		return Tree{}, err
+	}
+
+	for _, child := range children {
+		if !child.IsDir() {
+			continue
+		}
+
+		childPath := filepath.Join(path, child.Name())
+		subdirs := []string{}
+
+		for k := range maps.Keys(dirsMap) {
+			subdirs = append(subdirs, k)
+		}
+
+		if slices.Contains(subdirs, childPath) {
+			subtree, err := create(childPath)
 			if err != nil {
 				return Tree{}, err
 			}
 
-			root.SubTrees = append(root.SubTrees, &subTree)
-			continue
+			root.SubTrees = append(root.SubTrees, &subtree)
 		}
-
-		file, err := blob.Create(filepath.Join(path, entry.Name()))
-		if err != nil {
-			return Tree{}, err
-		}
-
-		root.Blobs = append(root.Blobs, file)
 	}
 
-	if !blob.Exists(root.Hash) {
-		err = root.write()
-	}
+	Hash(&root)
 
 	return root, err
-}
-
-func (t *Tree) write() error {
-	return nil
 }
