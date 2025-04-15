@@ -5,6 +5,7 @@ import (
 	"flag"
 	"notgit/internal/blob"
 	"notgit/internal/indexfile"
+	"notgit/internal/tree"
 	"notgit/utils"
 	"os"
 	"path/filepath"
@@ -46,13 +47,21 @@ func Add() error {
 		return add(".", force)
 	}
 
-	for _, arg := range args {
-		err := add(arg, force)
+	// for _, arg := range args {
+	// 	arg = filepath.Clean(filepath.ToSlash(arg))
+	// 	err := add(arg, force)
+	//
+	// 	if err != nil {
+	// 		return err
+	// 	}
+	// }
 
-		if err != nil {
-			return err
-		}
-	}
+	root := tree.Root()
+	root.Print("")
+	root.Add("main.go", "main.go")
+	root.Print("")
+	root.Add("internal/blob", "internal/blob")
+	root.Print("")
 
 	return nil
 }
