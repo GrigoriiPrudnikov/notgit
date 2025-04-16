@@ -5,7 +5,7 @@ import (
 	"fmt"
 )
 
-func Hash(t *Tree) string {
+func Hash(t *Tree) {
 	content := []byte{}
 
 	for _, blob := range t.Blobs {
@@ -21,5 +21,5 @@ func Hash(t *Tree) string {
 	hash := sha256.Sum256(blob)
 	hex := fmt.Sprintf("%x", hash)
 
-	return hex
+	t.Hash = hex
 }

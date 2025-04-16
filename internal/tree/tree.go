@@ -74,6 +74,8 @@ func (t *Tree) Add(path, fullPath string) error {
 					return err
 				}
 			}
+
+			Hash(subtree)
 			return nil
 		}
 
@@ -107,9 +109,23 @@ func (t *Tree) Add(path, fullPath string) error {
 		return err
 	}
 
+	Hash(&subtree)
 	t.SubTrees = append(t.SubTrees, &subtree)
 
 	return nil
+}
+
+// For debug, remove later
+func (t *Tree) Print(indent string) {
+	fmt.Printf("%s- [Tree] %s %s (%s)\n", indent, t.Permission, t.Path, t.Hash)
+
+	for _, b := range t.Blobs {
+		fmt.Printf("%s  • [Blob] %s %s (%s)\n", indent, b.Permission, b.Path, b.Hash)
+	}
+
+	for _, subtree := range t.SubTrees {
+		subtree.Print(indent + "  ")
+	}
 }
 
 func create(path string) (Tree, error) {
@@ -158,17 +174,4 @@ func create(path string) (Tree, error) {
 	Hash(&root)
 
 	return root, err
-}
-
-// For debug, remove later
-func (t *Tree) Print(indent string) {
-	fmt.Printf("%s- [Tree] %s %s (%s)\n", indent, t.Permission, t.Path, t.Hash)
-
-	for _, b := range t.Blobs {
-		fmt.Printf("%s  • [Blob] %s %s (%s)\n", indent, b.Permission, b.Path, b.Hash)
-	}
-
-	for _, subtree := range t.SubTrees {
-		subtree.Print(indent + "  ")
-	}
 }
