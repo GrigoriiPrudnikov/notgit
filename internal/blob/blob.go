@@ -13,10 +13,6 @@ func NewBlob(path string) (Blob, error) {
 		return Blob{}, err
 	}
 
-	hash := Hash(b)
-	// TODO: make blob have uncompressed content and compress it on write
-	content := utils.Compress(b, "blob")
-
 	info, err := os.Stat(path)
 	if err != nil {
 		return Blob{}, err
@@ -27,9 +23,10 @@ func NewBlob(path string) (Blob, error) {
 	blob := Blob{
 		Permission: permission,
 		Path:       filepath.Base(path),
-		Hash:       hash,
-		Content:    content,
+		Content:    b,
 	}
+
+	Hash(&blob)
 
 	return blob, err
 }
@@ -69,7 +66,11 @@ func (blob *Blob) Write() error {
 		return nil
 	}
 
-	err = os.WriteFile(file, blob.Content, 0644)
+	content := blob.Content
+	header := fmt.Sprintf("blob %d\x00\n", len(content))
+	compressed := utils.Compress(content, header)
+
+	err = os.WriteFile(file, compressed, 0644)
 
 	return err
 }

@@ -3,13 +3,11 @@ package utils
 import (
 	"bytes"
 	"compress/zlib"
-	"fmt"
 	"io"
 )
 
 // TODO: make utils.Compress recieve header and content without calculating in it
-func Compress(b []byte, variant string) []byte {
-	header := fmt.Sprintf("%s %d\x00\n", variant, len(b))
+func Compress(b []byte, header string) []byte {
 	content := append([]byte(header), b...)
 
 	var compressed bytes.Buffer
