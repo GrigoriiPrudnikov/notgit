@@ -35,10 +35,16 @@ func Parse() ([]blob.Blob, error) {
 			continue
 		}
 
+		b, err := blob.NewBlob(filepath.Join(parts[2]))
+		if err != nil {
+			return nil, err
+		}
+
 		stagedFiles = append(stagedFiles, blob.Blob{
 			Permission: parts[0],
 			Hash:       parts[1],
 			Path:       parts[2],
+			Content:    b.Content,
 		})
 	}
 

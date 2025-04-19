@@ -7,6 +7,7 @@ import (
 	"io"
 )
 
+// TODO: make utils.Compress recieve header and content without calculating in it
 func Compress(b []byte, variant string) []byte {
 	header := fmt.Sprintf("%s %d\x00\n", variant, len(b))
 	content := append([]byte(header), b...)

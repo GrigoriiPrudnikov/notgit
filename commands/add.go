@@ -3,6 +3,7 @@ package commands
 import (
 	"errors"
 	"flag"
+	"fmt"
 	"notgit/internal/blob"
 	"notgit/internal/indexfile"
 	"notgit/internal/tree"
@@ -57,11 +58,11 @@ func Add() error {
 	// }
 
 	root := tree.Root()
-	root.Print("")
 	root.Add("main.go", "main.go")
-	root.Print("")
 	root.Add("internal/blob", "internal/blob")
 	root.Print("")
+	err = root.Write()
+	fmt.Println(err)
 
 	return nil
 }
@@ -104,7 +105,7 @@ func addFile(path string) error {
 		return err
 	}
 
-	b, err := blob.Create(path)
+	b, err := blob.NewBlob(path)
 	b.Path = path
 	if err != nil {
 		return err

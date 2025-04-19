@@ -5,15 +5,15 @@ import (
 	"path/filepath"
 )
 
-func Exists(hash string) bool {
+func (b *Blob) exists() bool {
 	wd, err := os.Getwd()
 	if err != nil {
 		return false
 	}
 
 	objects := filepath.Join(wd, ".notgit", "objects")
-	dir := filepath.Join(objects, hash[:2])
-	file := filepath.Join(dir, hash[2:])
+	dir := filepath.Join(objects, b.Hash[:2])
+	file := filepath.Join(dir, b.Hash[2:])
 
 	_, err = os.Stat(dir)
 	if os.IsNotExist(err) {

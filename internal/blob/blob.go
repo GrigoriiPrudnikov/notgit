@@ -7,13 +7,14 @@ import (
 	"path/filepath"
 )
 
-func Create(path string) (Blob, error) {
+func NewBlob(path string) (Blob, error) {
 	b, err := os.ReadFile(path)
 	if err != nil {
 		return Blob{}, err
 	}
 
 	hash := Hash(b)
+	// TODO: make blob have uncompressed content and compress it on write
 	content := utils.Compress(b, "blob")
 
 	info, err := os.Stat(path)
@@ -30,27 +31,14 @@ func Create(path string) (Blob, error) {
 		Content:    content,
 	}
 
-	if !Exists(blob.Hash) {
-		err = blob.write()
-	}
-
 	return blob, err
 }
 
-// treePath is path to directory
-// func (blob *Blob) AddToTree() error {
-// 	idx := strings.LastIndex(blob.Path, "/")
-// 	if idx == -1 {
-// 		return errors.New("invalid path")
-// 	}
-//
-// 	treePath := blob.Path[:idx]
-// 	fileName := blob.Path[idx+1:]
-//
-// 	return nil
-// }
+func (blob *Blob) Write() error {
+	if blob.exists() {
+		return nil
+	}
 
-func (blob *Blob) write() error {
 	wd, err := os.Getwd()
 	if err != nil {
 		return err
@@ -77,7 +65,7 @@ func (blob *Blob) write() error {
 		}
 	}
 
-	if _, err := os.Stat(file); os.IsExist(err) {
+	if _, err := os.Stat(file); err == nil {
 		return nil
 	}
 
