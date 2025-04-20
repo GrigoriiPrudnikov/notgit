@@ -1,6 +1,7 @@
 package tree
 
 import (
+	"errors"
 	"fmt"
 	"maps"
 	"notgit/internal/blob"
@@ -21,7 +22,6 @@ func Root() Tree {
 		return Tree{}
 	}
 
-	// этот fucking shit не зочет работать из-за fucking troubles с путями файла
 	for _, staged := range index {
 		dir := filepath.Dir(staged.Path)
 		staged.Path = filepath.Base(staged.Path)
@@ -215,6 +215,9 @@ func create(path string) (Tree, error) {
 
 		if slices.Contains(subdirs, childPath) {
 			subtree, err := create(childPath)
+			if errors.Is(err, os.ErrNotExist) {
+				continue
+			}
 			if err != nil {
 				return Tree{}, err
 			}
