@@ -142,7 +142,5 @@ func addFile(path string) error {
 
 	updated = append(updated, b)
 
-	err = indexfile.Write(updated)
-
 	return err
 }
