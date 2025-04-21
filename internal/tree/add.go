@@ -58,6 +58,12 @@ func (t *Tree) Add(path, fullPath string) error {
 			return err
 		}
 
+		for _, blob := range t.Blobs {
+			if blob.Path == b.Path {
+				return nil
+			}
+		}
+
 		t.Blobs = append(t.Blobs, b)
 		return nil
 	}

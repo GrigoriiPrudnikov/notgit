@@ -3,7 +3,6 @@ package commands
 import (
 	"errors"
 	"flag"
-	"fmt"
 	"notgit/internal/blob"
 	"notgit/internal/indexfile"
 	"notgit/internal/tree"
@@ -62,9 +61,12 @@ func Add() error {
 	root.Add("internal/blob", "internal/blob")
 	root.Print("")
 	err = root.Write()
-	fmt.Println(err)
+	if err != nil {
+		return err
+	}
+	err = root.WriteIndex()
 
-	return nil
+	return err
 }
 
 // TODO: rewrite to trees
