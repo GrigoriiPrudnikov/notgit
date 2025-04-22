@@ -14,10 +14,10 @@ import (
 var dirsMap = map[string][]blob.Blob{}
 
 // Returns tree with all staged files
-func Root() Tree {
+func Root() *Tree {
 	index, err := indexfile.Parse()
 	if err != nil {
-		return Tree{}
+		return nil
 	}
 
 	for _, staged := range index {
@@ -28,7 +28,7 @@ func Root() Tree {
 
 	root, err := create(".")
 	if err != nil {
-		return Tree{}
+		return nil
 	}
 
 	return root
@@ -47,10 +47,10 @@ func (t *Tree) Print(indent string) {
 	}
 }
 
-func create(path string) (Tree, error) {
+func create(path string) (*Tree, error) {
 	info, err := os.Stat(path)
 	if os.IsNotExist(err) {
-		return Tree{}, err
+		return nil, err
 	}
 
 	root := Tree{
@@ -65,7 +65,7 @@ func create(path string) (Tree, error) {
 
 	children, err := os.ReadDir(path)
 	if err != nil {
-		return Tree{}, err
+		return nil, err
 	}
 
 	for _, child := range children {
@@ -86,14 +86,14 @@ func create(path string) (Tree, error) {
 				continue
 			}
 			if err != nil {
-				return Tree{}, err
+				return nil, err
 			}
 
-			root.SubTrees = append(root.SubTrees, &subtree)
+			root.SubTrees = append(root.SubTrees, subtree)
 		}
 	}
 
 	Hash(&root)
 
-	return root, err
+	return &root, err
 }

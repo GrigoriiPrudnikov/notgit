@@ -3,12 +3,17 @@ package tree
 import (
 	"fmt"
 	"notgit/internal/blob"
+	"notgit/utils"
 	"os"
 	"path/filepath"
 	"strings"
 )
 
 func (t *Tree) Add(path, fullPath string) error {
+	if utils.Ignored(fullPath) {
+		return nil
+	}
+
 	info, err := os.Stat(fullPath)
 	if os.IsNotExist(err) {
 		return err

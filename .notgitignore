@@ -1,1 +1,4 @@
 /commands/
+
+# ignore ds store
+.DS_Store

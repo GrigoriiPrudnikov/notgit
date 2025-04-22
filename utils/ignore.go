@@ -3,49 +3,68 @@ package utils
 import (
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 )
 
 var alwaysIgnored = []string{".git", ".notgit"}
 
+// Checks if a file or directory path should be ignored based on rules.
 func Ignored(path string) bool {
-	dir, err := os.Getwd()
+	base := filepath.Base(path)
+	if slices.Contains(alwaysIgnored, base) {
+		return true
+	}
+
+	wd, err := os.Getwd()
 	if err != nil {
 		return false
 	}
 
-	ignoreFile := filepath.Join(dir, ".notgitignore")
-	if _, err := os.Stat(ignoreFile); os.IsNotExist(err) {
-		return false
-	}
-
-	ignored, err := os.ReadFile(ignoreFile)
+	ignoreFile := filepath.Join(wd, ".notgitignore")
+	data, err := os.ReadFile(ignoreFile)
 	if err != nil {
 		return false
 	}
 
-	absolutePath, err := filepath.Abs(path)
+	absPath, err := filepath.Abs(path)
 	if err != nil {
 		return false
 	}
 
-	// TODO: make /commands/ ignore commands folder and everything inside
-	for _, pattern := range strings.Split(string(ignored), "\n")[:1] {
-		if pattern[0] == '/' {
-			pattern = filepath.Join(dir, pattern)
-			path = absolutePath
+	relPath, err := filepath.Rel(wd, absPath)
+	if err != nil {
+		return false
+	}
+	relPath = filepath.ToSlash(relPath)
 
-			return false
+	lines := strings.Split(string(data), "\n")
+	for _, pattern := range lines {
+		pattern = strings.TrimSpace(pattern)
+		if pattern == "" || strings.HasPrefix(pattern, "#") {
+			continue
 		}
 
-		match, err := filepath.Match(pattern, path)
-		if err != nil {
-			return false
-		}
-
-		if match {
-			return true
+		if strings.HasSuffix(pattern, "/") {
+			// Directory pattern: check if path starts with it
+			prefix := strings.TrimSuffix(pattern, "/")
+			if strings.HasPrefix(relPath, prefix+"/") || relPath == prefix {
+				return true
+			}
+		} else if strings.HasPrefix(pattern, "/") {
+			// Root-relative pattern
+			match, _ := filepath.Match(pattern[1:], relPath)
+			if match || relPath == pattern[1:] {
+				return true
+			}
+		} else {
+			// General pattern
+			match, _ := filepath.Match(pattern, relPath)
+			if match || filepath.Base(relPath) == pattern {
+				return true
+			}
 		}
 	}
+
 	return false
 }

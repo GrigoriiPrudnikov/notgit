@@ -59,6 +59,14 @@ func Add() error {
 	root := tree.Root()
 	root.Add("main.go", "main.go")
 	root.Add("internal/blob", "internal/blob")
+	dir, err := os.ReadDir(wd)
+	if err != nil {
+		return err
+	}
+	for _, child := range dir {
+		root.Add(child.Name(), child.Name())
+	}
+
 	root.Print("")
 	err = root.Write()
 	if err != nil {
