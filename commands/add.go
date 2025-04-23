@@ -3,6 +3,7 @@ package commands
 import (
 	"errors"
 	"flag"
+	"fmt"
 	"notgit/internal/blob"
 	"notgit/internal/indexfile"
 	"notgit/internal/tree"
@@ -47,24 +48,31 @@ func Add() error {
 		return add(".", force)
 	}
 
-	// for _, arg := range args {
-	// 	arg = filepath.Clean(filepath.ToSlash(arg))
-	// 	err := add(arg, force)
-	//
-	// 	if err != nil {
-	// 		return err
-	// 	}
-	// }
-
 	root := tree.Root()
-	root.Add("main.go", "main.go")
-	root.Add("internal/blob", "internal/blob")
-	dir, err := os.ReadDir(wd)
-	if err != nil {
-		return err
-	}
-	for _, child := range dir {
-		root.Add(child.Name(), child.Name())
+	root.Print("")
+	fmt.Println()
+
+	for _, arg := range args {
+		arg = filepath.Clean(filepath.ToSlash(arg))
+
+		if arg == "." {
+			dir, err := os.ReadDir(wd)
+			if err != nil {
+				return err
+			}
+			for _, child := range dir {
+				root.Add(child.Name(), child.Name())
+			}
+		}
+
+		if !utils.InWorkingDirectory(arg) {
+			return errors.New("'" + arg + "' is not in the working directory at '" + wd + "'")
+		}
+
+		err := root.Add(arg, arg)
+		if err != nil {
+			return err
+		}
 	}
 
 	root.Print("")

@@ -8,7 +8,7 @@ import (
 	"notgit/internal/indexfile"
 	"os"
 	"path/filepath"
-	"slices"
+	"strings"
 )
 
 var dirsMap = map[string][]blob.Blob{}
@@ -74,13 +74,22 @@ func create(path string) (*Tree, error) {
 		}
 
 		childPath := filepath.Join(path, child.Name())
+		childPath = filepath.Clean(childPath)
 		subdirs := []string{}
 
 		for k := range maps.Keys(dirsMap) {
 			subdirs = append(subdirs, k)
 		}
 
-		if slices.Contains(subdirs, childPath) {
+		hasSubdir := false
+		for path := range dirsMap {
+			if strings.HasPrefix(path, childPath+string(os.PathSeparator)) {
+				hasSubdir = true
+				break
+			}
+		}
+
+		if hasSubdir || dirsMap[childPath] != nil {
 			subtree, err := create(childPath)
 			if errors.Is(err, os.ErrNotExist) {
 				continue
