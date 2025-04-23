@@ -3,13 +3,11 @@ package commands
 import (
 	"errors"
 	"flag"
-	"fmt"
-	"notgit/internal/blob"
-	"notgit/internal/indexfile"
 	"notgit/internal/tree"
 	"notgit/utils"
 	"os"
 	"path/filepath"
+	"slices"
 )
 
 func Add() error {
@@ -44,13 +42,17 @@ func Add() error {
 		return errors.New("no arguments")
 	}
 
-	if all {
-		return add(".", force)
-	}
-
 	root := tree.Root()
-	root.Print("")
-	fmt.Println()
+
+	if all || slices.Contains(args, ".") {
+		dir, err := os.ReadDir(wd)
+		if err != nil {
+			return err
+		}
+		for _, child := range dir {
+			root.Add(child.Name(), child.Name())
+		}
+	}
 
 	for _, arg := range args {
 		arg = filepath.Clean(filepath.ToSlash(arg))
@@ -75,90 +77,11 @@ func Add() error {
 		}
 	}
 
-	root.Print("")
 	err = root.Write()
 	if err != nil {
 		return err
 	}
 	err = root.WriteIndex()
-
-	return err
-}
-
-// TODO: rewrite to trees
-func add(path string, force bool) error {
-	info, err := os.Stat(path)
-	if os.IsNotExist(err) {
-		return err
-	}
-
-	if utils.Ignored(path) && !force {
-		return nil
-	}
-
-	if info.IsDir() {
-		children, err := os.ReadDir(path)
-		if err != nil {
-			return err
-		}
-
-		for _, child := range children {
-			childPath := filepath.Join(path, child.Name())
-
-			err := add(childPath, force)
-			if err != nil {
-				return err
-			}
-		}
-
-		return nil
-	}
-
-	return addFile(path)
-}
-
-func addFile(path string) error {
-	wd, err := os.Getwd()
-	if err != nil {
-		return err
-	}
-
-	b, err := blob.NewBlob(path)
-	b.Path = path
-	if err != nil {
-		return err
-	}
-
-	indexPath := filepath.Join(wd, ".notgit", "index")
-
-	_, err = os.Stat(indexPath)
-	if os.IsNotExist(err) {
-		err = os.WriteFile(indexPath, []byte(""), 0644)
-		if err != nil {
-			return err
-		}
-	}
-
-	stagedFiles, err := indexfile.Parse()
-	if err != nil {
-		return err
-	}
-
-	var updated []blob.Blob
-
-	for _, staged := range stagedFiles {
-		if _, err := os.Stat(filepath.Join(wd, staged.Path)); os.IsNotExist(err) {
-			continue
-		}
-
-		if staged.Path == path {
-			continue
-		}
-
-		updated = append(updated, staged)
-	}
-
-	updated = append(updated, b)
 
 	return err
 }
