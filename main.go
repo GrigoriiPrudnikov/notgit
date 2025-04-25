@@ -7,9 +7,10 @@ import (
 )
 
 var command = map[string]func() error{
+	"add":    commands.Add,
+	"commit": commands.Commit,
 	"config": commands.Config,
 	"init":   commands.Init,
-	"add":    commands.Add,
 }
 
 func main() {
