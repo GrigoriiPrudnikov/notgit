@@ -3,6 +3,7 @@ package commands
 import (
 	"errors"
 	"flag"
+	"notgit/internal/commit"
 	"os"
 )
 
@@ -16,11 +17,13 @@ func Commit() error {
 	fs.StringVar(&author, "author", "", "author")
 
 	fs.Parse(os.Args[2:])
-	args := fs.Args()
 
-	if len(args) == 0 {
-		return errors.New("no arguments")
+	commit := commit.NewCommit(message, author, nil)
+	if commit == nil {
+		return errors.New("commit creation failed")
 	}
 
-	return nil
+	err := commit.Write()
+
+	return err
 }

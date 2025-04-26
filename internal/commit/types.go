@@ -1,11 +1,11 @@
 package commit
 
-import "time"
-
 type Commit struct {
-	Date    time.Time
+	Hash    string
+	Time    int64
+	Offset  string
 	Author  string
 	Message string
-	Parents []string
 	Tree    string
+	Parents []string
 }

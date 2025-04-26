@@ -1,7 +1,9 @@
 package tree
 
 import (
+	"fmt"
 	"notgit/internal/blob"
+	"notgit/internal/object"
 	"notgit/utils"
 	"os"
 	"path/filepath"
@@ -28,32 +30,11 @@ func (t *Tree) Write() error {
 		content = append(content, []byte(subtree.Permission+" tree "+subtree.Hash+" "+subtree.Path+"\n")...)
 	}
 
-	compressed := utils.Compress(content, "tree")
+	header := fmt.Sprintf("tree %d\x00\n", len(content))
+	compressed := utils.Compress(header, content)
 
-	wd, err := os.Getwd()
-	if err != nil {
-		return err
-	}
-	objects := filepath.Join(wd, ".notgit", "objects")
+	return object.Write(t.Hash, compressed)
 
-	hash := t.Hash
-	dir := filepath.Join(objects, hash[:2])
-	file := filepath.Join(dir, hash[2:])
-
-	if _, err := os.Stat(dir); os.IsNotExist(err) {
-		err = os.Mkdir(dir, 0755)
-		if err != nil {
-			return err
-		}
-	}
-
-	if _, err := os.Stat(file); os.IsExist(err) {
-		return nil
-	}
-
-	err = os.WriteFile(file, compressed, 0644)
-
-	return err
 }
 
 func (t *Tree) WriteIndex() error {
@@ -76,16 +57,16 @@ func (t *Tree) WriteIndex() error {
 	return nil
 }
 
-type IndexEntry struct {
+type indexEntry struct {
 	path string
 	blob blob.Blob
 }
 
-func (t *Tree) getEntries() []IndexEntry {
-	entries := []IndexEntry{}
+func (t *Tree) getEntries() []indexEntry {
+	entries := []indexEntry{}
 
 	for _, blob := range t.Blobs {
-		entries = append(entries, IndexEntry{
+		entries = append(entries, indexEntry{
 			path: filepath.Join(t.Path, blob.Path),
 			blob: blob,
 		})
@@ -93,7 +74,7 @@ func (t *Tree) getEntries() []IndexEntry {
 
 	for _, subtree := range t.SubTrees {
 		for _, entry := range subtree.getEntries() {
-			entries = append(entries, IndexEntry{
+			entries = append(entries, indexEntry{
 				path: filepath.Join(t.Path, entry.path),
 				blob: entry.blob,
 			})
