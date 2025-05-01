@@ -5,8 +5,8 @@ import (
 	"flag"
 	"notgit/internal/commit"
 	"notgit/internal/config"
+	"notgit/utils"
 	"os"
-	"path/filepath"
 )
 
 func Commit() error {
@@ -15,8 +15,7 @@ func Commit() error {
 		return err
 	}
 
-	notgitDir := filepath.Join(wd, ".notgit")
-	if _, err := os.Stat(notgitDir); os.IsNotExist(err) {
+	if !utils.RepoInitialized(wd) {
 		// TODO: add handling for parent directories (fatal: not a git repository (or any of the parent directories): .git)
 		return errors.New("not a git repository")
 	}
@@ -33,12 +32,10 @@ func Commit() error {
 
 	fs.Parse(os.Args[2:])
 
-	commit := commit.NewCommit(message, author, nil)
-	if commit == nil {
+	c := commit.NewCommit(message, author, nil)
+	if c == nil {
 		return errors.New("commit creation failed")
 	}
 
-	err = commit.Write()
-
-	return err
+	return c.Write()
 }
