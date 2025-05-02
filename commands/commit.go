@@ -32,6 +32,13 @@ func Commit() error {
 
 	fs.Parse(os.Args[2:])
 
+	if message == "" {
+		return errors.New("commit message is required")
+	}
+	if author == "" {
+		return errors.New("author is required")
+	}
+
 	c := commit.NewCommit(message, author, nil)
 	if c == nil {
 		return errors.New("commit creation failed")

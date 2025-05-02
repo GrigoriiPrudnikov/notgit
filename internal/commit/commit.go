@@ -34,14 +34,14 @@ func (c *Commit) Write() error {
 	header := fmt.Sprintf("commit %d\x00\n", len(contentBytes))
 
 	compressed := utils.Compress(header, contentBytes)
-	hash(c)
+	hash := c.Hash()
 
-	err := object.Write(c.Hash, compressed)
+	err := object.Write(hash, compressed)
 	if err != nil {
 		return err
 	}
 
-	err = os.WriteFile(filepath.Join(".notgit", "HEAD"), []byte(c.Hash), 0644)
+	err = os.WriteFile(filepath.Join(".notgit", "HEAD"), []byte(hash), 0644)
 
 	return err
 }
