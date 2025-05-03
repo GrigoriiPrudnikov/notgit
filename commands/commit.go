@@ -3,6 +3,7 @@ package commands
 import (
 	"errors"
 	"flag"
+	"fmt"
 	"notgit/internal/commit"
 	"notgit/internal/config"
 	"notgit/utils"
@@ -20,7 +21,9 @@ func Commit() error {
 		return errors.New("not a git repository")
 	}
 
+	// TODO: make config always take data from local config and write it fomr global config on repo init
 	config, err := config.Parse(true)
+	defaultAuthor := config["user"]["name"] + " <" + config["user"]["email"] + ">"
 
 	var message, author string
 
@@ -28,7 +31,7 @@ func Commit() error {
 
 	fs.StringVar(&message, "m", "", "commit message")
 	fs.StringVar(&message, "message", "", "commit message")
-	fs.StringVar(&author, "author", config["user"]["name"], "author")
+	fs.StringVar(&author, "author", defaultAuthor, "commit author")
 
 	fs.Parse(os.Args[2:])
 
@@ -44,5 +47,11 @@ func Commit() error {
 		return errors.New("commit creation failed")
 	}
 
-	return c.Write()
+	parsed, err := commit.ParseHead()
+	if err != nil {
+		return err
+	}
+	fmt.Println("parsed:", *parsed)
+
+	return nil // c.Write()
 }

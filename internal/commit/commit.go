@@ -15,15 +15,16 @@ import (
 
 func NewCommit(message, author string, parents []string) *Commit {
 	root := tree.Root()
-	time := time.Now()
+	t := time.Now()
 
 	return &Commit{
-		Time:    time.Unix(),
-		Offset:  time.Format("-0700"),
-		Tree:    root.Hash,
-		Author:  author,
-		Message: message,
-		Parents: parents,
+		Time:      t.Unix(),
+		Offset:    t.Format("-0700"),
+		Tree:      root.Hash,
+		Author:    author,
+		Committer: author,
+		Message:   message,
+		Parents:   parents,
 	}
 }
 
@@ -56,10 +57,11 @@ func ParseHead() (*Commit, error) {
 }
 
 func Parse(hash string) (*Commit, error) {
-	c := Commit{}
 	if len(hash) != 64 {
 		return nil, errors.New("invalid hash")
 	}
+
+	c := Commit{}
 
 	dir, file := hash[0:2], hash[2:]
 	path := filepath.Join(".notgit", "objects", dir, file)
@@ -78,29 +80,41 @@ func Parse(hash string) (*Commit, error) {
 		return nil, err
 	}
 
+	if !strings.HasPrefix(string(content), "commit") {
+		return nil, errors.New("not a commit")
+	}
+
 	lines := strings.Split(string(content), "\n")
 	for i, line := range lines {
 		if i == 0 {
 			continue
 		}
-		if i == len(lines) {
+
+		if i == len(lines)-1 {
 			c.Message = line
-			break
 		}
 
-		section := strings.Split(line, " ")
-		if len(section) != 2 {
-			return nil, errors.New("invalid commit structure")
-		}
-		key, value := section[0], section[1]
+		prefix := strings.Split(line, " ")[0]
+		values := strings.Split(line, " ")[1:]
 
-		switch key {
+		switch prefix {
+		case "author", "committer":
+			name, time, offset := parseNameTimeOffset(line)
+			c.Time = time
+			c.Offset = offset
+
+			if prefix == "author" {
+				c.Author = name
+				continue
+			}
+
+			c.Committer = name
+
 		case "tree":
-			c.Tree = value
-		case "author":
-			c.Author = value
+			c.Tree = values[0]
+
 		case "parent":
-			c.Parents = append(c.Parents, value)
+			c.Parents = append(c.Parents, values[0])
 		}
 	}
 
@@ -111,10 +125,9 @@ func Parse(hash string) (*Commit, error) {
 
 func (c *Commit) getContent() []byte {
 	content := []string{
-		strconv.FormatInt(c.Time, 10) + " " + c.Offset,
 		"tree " + c.Tree,
-		"author " + c.Author,
-		"committer " + c.Author,
+		"author " + c.Author + " " + strconv.FormatInt(c.Time, 10) + " " + c.Offset,
+		"committer " + c.Author + " " + strconv.FormatInt(c.Time, 10) + " " + c.Offset,
 	}
 
 	for _, parent := range c.Parents {
@@ -123,4 +136,13 @@ func (c *Commit) getContent() []byte {
 
 	content = append(content, "\n"+c.Message)
 	return []byte(strings.Join(content, "\n"))
+}
+
+func parseNameTimeOffset(line string) (name string, time int64, offset string) {
+	n := len(line)
+	values := strings.Split(line, " ")
+	name = strings.Join(values[:n-2], " ")
+	time, _ = strconv.ParseInt(values[n-2], 10, 64)
+	offset = values[n-1]
+	return
 }
