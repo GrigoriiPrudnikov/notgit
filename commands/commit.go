@@ -3,13 +3,14 @@ package commands
 import (
 	"errors"
 	"flag"
-	"fmt"
 	"notgit/internal/commit"
 	"notgit/internal/config"
 	"notgit/utils"
 	"os"
+	"path/filepath"
 )
 
+// TODO: add amend option
 func Commit() error {
 	wd, err := os.Getwd()
 	if err != nil {
@@ -30,7 +31,6 @@ func Commit() error {
 	fs := flag.NewFlagSet("commit", flag.ExitOnError)
 
 	fs.StringVar(&message, "m", "", "commit message")
-	fs.StringVar(&message, "message", "", "commit message")
 	fs.StringVar(&author, "author", defaultAuthor, "commit author")
 
 	fs.Parse(os.Args[2:])
@@ -42,16 +42,14 @@ func Commit() error {
 		return errors.New("author is required")
 	}
 
-	c := commit.NewCommit(message, author, nil)
-	if c == nil {
-		return errors.New("commit creation failed")
+	var parents []string
+	head, err := os.ReadFile(filepath.Join(wd, ".notgit", "HEAD"))
+	if string(head) != "" {
+		parents = append(parents, string(head))
 	}
 
-	parsed, err := commit.ParseHead()
-	if err != nil {
-		return err
-	}
-	fmt.Println("parsed:", *parsed)
+	c := commit.NewCommit(message, author, parents)
+	utils.PrintStruct(c)
 
-	return nil // c.Write()
+	return c.Write()
 }

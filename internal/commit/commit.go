@@ -1,7 +1,6 @@
 package commit
 
 import (
-	"errors"
 	"fmt"
 	"notgit/internal/object"
 	"notgit/internal/tree"
@@ -47,41 +46,41 @@ func (c *Commit) Write() error {
 	return err
 }
 
-func ParseHead() (*Commit, error) {
+func ParseHead() *Commit {
 	head, err := os.ReadFile(filepath.Join(".notgit", "HEAD"))
 	if err != nil {
-		return nil, err
+		return nil
 	}
 
 	return Parse(string(head))
 }
 
-func Parse(hash string) (*Commit, error) {
-	if len(hash) != 64 {
-		return nil, errors.New("invalid hash")
+func Parse(hash string) *Commit {
+	if len(hash) == 0 || len(hash) != 64 {
+		return nil
 	}
 
-	c := Commit{}
+	c := &Commit{}
 
 	dir, file := hash[0:2], hash[2:]
 	path := filepath.Join(".notgit", "objects", dir, file)
 
 	_, err := os.Stat(path)
 	if err != nil {
-		return nil, err
+		return nil
 	}
 
 	content, err := os.ReadFile(path)
 	if err != nil {
-		return nil, err
+		return nil
 	}
 	content, err = utils.Decompress(content)
 	if err != nil {
-		return nil, err
+		return nil
 	}
 
 	if !strings.HasPrefix(string(content), "commit") {
-		return nil, errors.New("not a commit")
+		return nil
 	}
 
 	lines := strings.Split(string(content), "\n")
@@ -118,9 +117,7 @@ func Parse(hash string) (*Commit, error) {
 		}
 	}
 
-	fmt.Println(c)
-
-	return &c, nil
+	return c
 }
 
 func (c *Commit) getContent() []byte {
@@ -139,8 +136,8 @@ func (c *Commit) getContent() []byte {
 }
 
 func parseNameTimeOffset(line string) (name string, time int64, offset string) {
-	n := len(line)
 	values := strings.Split(line, " ")
+	n := len(values)
 	name = strings.Join(values[:n-2], " ")
 	time, _ = strconv.ParseInt(values[n-2], 10, 64)
 	offset = values[n-1]
