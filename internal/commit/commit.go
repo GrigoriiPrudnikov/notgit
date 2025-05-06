@@ -13,27 +13,29 @@ import (
 )
 
 func NewCommit(message, author string, parents []string) *Commit {
-	root := tree.Root()
+	root := tree.Root().Hash()
 	t := time.Now()
-
-	return &Commit{
+	c := &Commit{
 		Time:      t.Unix(),
 		Offset:    t.Format("-0700"),
-		Tree:      root.Hash,
+		Tree:      root,
 		Author:    author,
 		Committer: author,
 		Message:   message,
-		Parents:   parents,
 	}
+
+	for _, parent := range parents {
+		c.Parents = append(c.Parents, Parse(parent))
+	}
+
+	return c
 }
 
 func (c *Commit) Write() error {
-	content := c.getContent()
-	contentBytes := []byte(content)
+	content := c.GetContent()
+	header := fmt.Sprintf("commit %d\x00\n", len(content))
 
-	header := fmt.Sprintf("commit %d\x00\n", len(contentBytes))
-
-	compressed := utils.Compress(header, contentBytes)
+	compressed := utils.Compress(header, content)
 	hash := c.Hash()
 
 	err := object.Write(hash, compressed)
@@ -56,7 +58,7 @@ func ParseHead() *Commit {
 }
 
 func Parse(hash string) *Commit {
-	if len(hash) == 0 || len(hash) != 64 {
+	if len(hash) != 64 {
 		return nil
 	}
 
@@ -66,7 +68,7 @@ func Parse(hash string) *Commit {
 	path := filepath.Join(".notgit", "objects", dir, file)
 
 	_, err := os.Stat(path)
-	if err != nil {
+	if os.IsNotExist(err) {
 		return nil
 	}
 
@@ -89,8 +91,8 @@ func Parse(hash string) *Commit {
 			continue
 		}
 
-		if i == len(lines)-1 {
-			c.Message = line
+		if line == "" {
+			break
 		}
 
 		prefix := strings.Split(line, " ")[0]
@@ -113,14 +115,19 @@ func Parse(hash string) *Commit {
 			c.Tree = values[0]
 
 		case "parent":
-			c.Parents = append(c.Parents, values[0])
+			parent := Parse(values[0])
+			if parent != nil {
+				c.Parents = append(c.Parents, parent)
+			}
 		}
 	}
+
+	c.Message = lines[len(lines)-1]
 
 	return c
 }
 
-func (c *Commit) getContent() []byte {
+func (c *Commit) GetContent() []byte {
 	content := []string{
 		"tree " + c.Tree,
 		"author " + c.Author + " " + strconv.FormatInt(c.Time, 10) + " " + c.Offset,
@@ -128,17 +135,20 @@ func (c *Commit) getContent() []byte {
 	}
 
 	for _, parent := range c.Parents {
-		content = append(content, "parent "+parent)
+		if parent == nil {
+			continue
+		}
+		content = append(content, "parent "+parent.Hash())
 	}
 
-	content = append(content, "\n"+c.Message)
+	content = append(content, "", c.Message)
 	return []byte(strings.Join(content, "\n"))
 }
 
 func parseNameTimeOffset(line string) (name string, time int64, offset string) {
 	values := strings.Split(line, " ")
 	n := len(values)
-	name = strings.Join(values[:n-2], " ")
+	name = strings.Join(values[1:n-2], " ")
 	time, _ = strconv.ParseInt(values[n-2], 10, 64)
 	offset = values[n-1]
 	return

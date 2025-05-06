@@ -12,7 +12,7 @@ func PrintStruct(v any) {
 	enc.SetEscapeHTML(false)
 	enc.SetIndent("", "  ")
 	if err := enc.Encode(v); err != nil {
-		fmt.Println("PrettyPrint error:", err)
+		fmt.Println("PrintStruct: failed to encode:", err)
 		return
 	}
 	fmt.Print(buf.String())

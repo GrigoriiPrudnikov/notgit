@@ -7,5 +7,5 @@ type Commit struct {
 	Committer string
 	Message   string
 	Tree      string
-	Parents   []string
+	Parents   []*Commit
 }

@@ -27,14 +27,13 @@ func (t *Tree) Write() error {
 			return err
 		}
 
-		content = append(content, []byte(subtree.Permission+" tree "+subtree.Hash+" "+subtree.Path+"\n")...)
+		content = append(content, []byte(subtree.Permission+" tree "+subtree.Hash()+" "+subtree.Path+"\n")...)
 	}
 
 	header := fmt.Sprintf("tree %d\x00\n", len(content))
 	compressed := utils.Compress(header, content)
 
-	return object.Write(t.Hash, compressed)
-
+	return object.Write(t.Hash(), compressed)
 }
 
 func (t *Tree) WriteIndex() error {

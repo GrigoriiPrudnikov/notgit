@@ -3,8 +3,7 @@ package commit
 import "notgit/utils"
 
 func (c *Commit) Hash() string {
-	content := c.getContent()
-	contentBytes := []byte(content)
+	content := []byte(c.GetContent())
 
-	return utils.Hash("commit", contentBytes)
+	return utils.Hash("commit", content)
 }

@@ -102,7 +102,5 @@ func create(path string) (*Tree, error) {
 		}
 	}
 
-	Hash(&root)
-
 	return &root, err
 }
