@@ -13,12 +13,13 @@ import (
 )
 
 func NewCommit(message, author string, parents []string) *Commit {
-	root := tree.Root().Hash()
+	root := tree.Root()
 	t := time.Now()
+
 	c := &Commit{
 		Time:      t.Unix(),
 		Offset:    t.Format("-0700"),
-		Tree:      root,
+		Tree:      root.Hash(),
 		Author:    author,
 		Committer: author,
 		Message:   message,
@@ -135,9 +136,6 @@ func (c *Commit) GetContent() []byte {
 	}
 
 	for _, parent := range c.Parents {
-		if parent == nil {
-			continue
-		}
 		content = append(content, "parent "+parent.Hash())
 	}
 

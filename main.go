@@ -32,6 +32,6 @@ func main() {
 
 	err := command[os.Args[1]]()
 	if err != nil {
-		fmt.Println(err)
+		fmt.Println("error:", err)
 	}
 }

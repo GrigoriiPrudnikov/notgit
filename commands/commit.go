@@ -19,7 +19,7 @@ func Commit() error {
 
 	if !utils.RepoInitialized(wd) {
 		// TODO: add handling for parent directories (fatal: not a git repository (or any of the parent directories): .git)
-		return errors.New("not a git repository")
+		return errors.New("not a notgit repository")
 	}
 
 	// TODO: make config always take data from local config and write it fomr global config on repo init
@@ -27,11 +27,13 @@ func Commit() error {
 	defaultAuthor := config["user"]["name"] + " <" + config["user"]["email"] + ">"
 
 	var message, author string
+	var amend bool
 
 	fs := flag.NewFlagSet("commit", flag.ExitOnError)
 
 	fs.StringVar(&message, "m", "", "commit message")
 	fs.StringVar(&author, "author", defaultAuthor, "commit author")
+	fs.BoolVar(&amend, "amend", false, "amend previous commit")
 
 	fs.Parse(os.Args[2:])
 
@@ -40,6 +42,16 @@ func Commit() error {
 	}
 	if author == "" {
 		return errors.New("author is required")
+	}
+
+	if amend {
+		c := commit.ParseHead()
+		if c == nil {
+			return errors.New("nothing to amend.")
+		}
+		c.Author = author
+		c.Message = message
+		return c.Write()
 	}
 
 	var parents []string
