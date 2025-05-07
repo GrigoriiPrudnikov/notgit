@@ -64,7 +64,6 @@ func Commit() error {
 	if c == nil {
 		return errors.New("nothing to commit")
 	}
-	utils.PrintStruct(c)
 
 	return c.Write()
 }
