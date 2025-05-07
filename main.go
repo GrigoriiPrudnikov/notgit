@@ -7,9 +7,10 @@ import (
 )
 
 var command = map[string]func() error{
+	"add":    commands.Add,
+	"commit": commands.Commit,
 	"config": commands.Config,
 	"init":   commands.Init,
-	"add":    commands.Add,
 }
 
 func main() {
@@ -31,6 +32,6 @@ func main() {
 
 	err := command[os.Args[1]]()
 	if err != nil {
-		fmt.Println(err)
+		fmt.Println("error:", err)
 	}
 }

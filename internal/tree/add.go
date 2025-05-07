@@ -54,7 +54,6 @@ func (t *Tree) Add(path, fullPath string) error {
 				}
 			}
 
-			Hash(subtree)
 			return nil
 		}
 
@@ -80,7 +79,6 @@ func (t *Tree) Add(path, fullPath string) error {
 				return err
 			}
 
-			Hash(subtree)
 			return nil
 		}
 	}
@@ -95,7 +93,6 @@ func (t *Tree) Add(path, fullPath string) error {
 		return err
 	}
 
-	Hash(&subtree)
 	t.SubTrees = append(t.SubTrees, &subtree)
 
 	return nil

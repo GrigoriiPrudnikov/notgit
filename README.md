@@ -1,5 +1,4 @@
-do not forget:
+TODO:
 
-- [ ] add garbage collection
-- [ ] add filepath.ToSlash to ensure that paths are always slashed
-- [ ] add custom error messages
+- [ ] garbage collection
+- [ ] custom error messages

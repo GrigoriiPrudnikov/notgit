@@ -2,6 +2,7 @@ package blob
 
 import (
 	"fmt"
+	"notgit/internal/object"
 	"notgit/utils"
 	"os"
 	"path/filepath"
@@ -26,7 +27,7 @@ func NewBlob(path string) (Blob, error) {
 		Content:    b,
 	}
 
-	Hash(&blob)
+	hash(&blob)
 
 	return blob, err
 }
@@ -50,27 +51,11 @@ func (blob *Blob) Write() error {
 		}
 	}
 
-	hash := blob.Hash
-
-	dir := filepath.Join(objects, hash[:2])
-	file := filepath.Join(dir, hash[2:])
-
-	if _, err := os.Stat(dir); os.IsNotExist(err) {
-		err = os.Mkdir(dir, 0755)
-		if err != nil {
-			return err
-		}
-	}
-
-	if _, err := os.Stat(file); err == nil {
-		return nil
-	}
-
 	content := blob.Content
 	header := fmt.Sprintf("blob %d\x00\n", len(content))
-	compressed := utils.Compress(content, header)
+	compressed := utils.Compress(header, content)
 
-	err = os.WriteFile(file, compressed, 0644)
+	object.Write(blob.Hash, compressed)
 
 	return err
 }

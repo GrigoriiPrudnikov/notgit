@@ -57,6 +57,7 @@ func Config() error {
 	return setValue(args, global)
 }
 
+// TODO: rewrite all to flag.StringVar
 func getValue(args []string, global bool) error {
 	if len(args) != 1 {
 		return errors.New("invalid arguments")

@@ -7,7 +7,7 @@ import (
 )
 
 // TODO: make utils.Compress recieve header and content without calculating in it
-func Compress(b []byte, header string) []byte {
+func Compress(header string, b []byte) []byte {
 	content := append([]byte(header), b...)
 
 	var compressed bytes.Buffer
