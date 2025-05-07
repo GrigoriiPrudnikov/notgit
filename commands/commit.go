@@ -10,7 +10,6 @@ import (
 	"path/filepath"
 )
 
-// TODO: add amend option
 func Commit() error {
 	wd, err := os.Getwd()
 	if err != nil {
@@ -60,7 +59,11 @@ func Commit() error {
 		parents = append(parents, string(head))
 	}
 
+	// TODO: add --allow-empty option
 	c := commit.NewCommit(message, author, parents)
+	if c == nil {
+		return errors.New("nothing to commit")
+	}
 	utils.PrintStruct(c)
 
 	return c.Write()

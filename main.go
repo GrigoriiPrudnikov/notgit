@@ -11,6 +11,7 @@ var command = map[string]func() error{
 	"commit": commands.Commit,
 	"config": commands.Config,
 	"init":   commands.Init,
+	"log":    commands.Log,
 }
 
 func main() {

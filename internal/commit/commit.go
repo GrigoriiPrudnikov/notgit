@@ -26,7 +26,11 @@ func NewCommit(message, author string, parents []string) *Commit {
 	}
 
 	for _, parent := range parents {
-		c.Parents = append(c.Parents, Parse(parent))
+		p := Parse(parent)
+		if p.Tree == c.Tree {
+			return nil
+		}
+		c.Parents = append(c.Parents, p)
 	}
 
 	return c
