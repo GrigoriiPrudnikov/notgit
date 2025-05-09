@@ -22,7 +22,12 @@ func Log() error {
 		loc := time.FixedZone("commit zone", totalOffset)
 		adjusted := timestamp.In(loc).Format("2006-01-02")
 
-		fmt.Printf("\033[33m%s\033[0m \033[34m%s\033[0m %s\n", current.Hash()[:7], adjusted, current.Message)
+		headIndicator := ""
+		if current == head {
+			headIndicator = "\033[33m(\033[0m\033[35mHEAD\033[0m\033[33m)\033[0m "
+		}
+
+		fmt.Printf("\033[33m%s\033[0m \033[34m%s\033[0m %s%s\n", current.Hash()[:7], adjusted, headIndicator, current.Message)
 		if len(current.Parents) > 0 {
 			current = current.Parents[0]
 		} else {
