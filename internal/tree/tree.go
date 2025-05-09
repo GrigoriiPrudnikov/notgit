@@ -14,7 +14,7 @@ import (
 var dirsMap = map[string][]blob.Blob{}
 
 // Returns tree with all staged files
-func Root() *Tree {
+func Staged() *Tree {
 	index, err := indexfile.Parse()
 	if err != nil {
 		return nil

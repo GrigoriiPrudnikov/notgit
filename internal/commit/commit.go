@@ -13,7 +13,7 @@ import (
 )
 
 func NewCommit(message, author string, parents []string) *Commit {
-	root := tree.Root()
+	root := tree.Staged()
 	t := time.Now()
 
 	c := &Commit{
