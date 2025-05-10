@@ -6,12 +6,11 @@ import (
 	"maps"
 	"notgit/internal/blob"
 	"notgit/internal/indexfile"
+	"notgit/utils"
 	"os"
 	"path/filepath"
 	"strings"
 )
-
-var dirsMap = map[string][]blob.Blob{}
 
 // Returns tree with all staged files
 func Staged() *Tree {
@@ -20,13 +19,31 @@ func Staged() *Tree {
 		return nil
 	}
 
+	files := map[string][]blob.Blob{}
+
 	for _, staged := range index {
 		dir := filepath.Dir(staged.Path)
 		staged.Path = filepath.Base(staged.Path)
-		dirsMap[dir] = append(dirsMap[dir], staged)
+		files[dir] = append(files[dir], staged)
 	}
 
-	root, err := create(".")
+	root, err := create(".", files)
+	if err != nil {
+		return nil
+	}
+
+	return root
+}
+
+func Root() *Tree {
+	files := map[string][]blob.Blob{}
+
+	files, err := getAllFiles()
+	if err != nil {
+		return nil
+	}
+
+	root, err := create(".", files)
 	if err != nil {
 		return nil
 	}
@@ -47,7 +64,7 @@ func (t *Tree) Print(indent string) {
 	}
 }
 
-func create(path string) (*Tree, error) {
+func create(path string, files map[string][]blob.Blob) (*Tree, error) {
 	info, err := os.Stat(path)
 	if os.IsNotExist(err) {
 		return nil, err
@@ -58,7 +75,7 @@ func create(path string) (*Tree, error) {
 		Permission: fmt.Sprintf("%o", info.Mode().Perm()),
 	}
 
-	blobs := dirsMap[path]
+	blobs := files[path]
 	for _, blob := range blobs {
 		root.Blobs = append(root.Blobs, blob)
 	}
@@ -77,20 +94,20 @@ func create(path string) (*Tree, error) {
 		childPath = filepath.Clean(childPath)
 		subdirs := []string{}
 
-		for k := range maps.Keys(dirsMap) {
+		for k := range maps.Keys(files) {
 			subdirs = append(subdirs, k)
 		}
 
 		hasSubdir := false
-		for path := range dirsMap {
+		for path := range files {
 			if strings.HasPrefix(path, childPath+string(os.PathSeparator)) {
 				hasSubdir = true
 				break
 			}
 		}
 
-		if hasSubdir || dirsMap[childPath] != nil {
-			subtree, err := create(childPath)
+		if hasSubdir || files[childPath] != nil {
+			subtree, err := create(childPath, files)
 			if errors.Is(err, os.ErrNotExist) {
 				continue
 			}
@@ -103,4 +120,32 @@ func create(path string) (*Tree, error) {
 	}
 
 	return &root, err
+}
+
+func getAllFiles() (map[string][]blob.Blob, error) {
+	files := map[string][]blob.Blob{}
+
+	err := filepath.WalkDir(".", func(path string, d os.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+		if utils.Ignored(path) {
+			if d.IsDir() {
+				return filepath.SkipDir
+			}
+			return nil
+		}
+		if d.IsDir() {
+			return nil
+		}
+
+		fmt.Println(path)
+		dir := filepath.Dir(path)
+		b, err := blob.NewBlob(path)
+
+		files[dir] = append(files[dir], b)
+
+		return nil
+	})
+	return files, err
 }
