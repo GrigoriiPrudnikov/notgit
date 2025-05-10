@@ -42,7 +42,7 @@ func Add() error {
 		return errors.New("no arguments")
 	}
 
-	root := tree.Root()
+	root := tree.Staged()
 
 	if all || slices.Contains(args, ".") {
 		dir, err := os.ReadDir(wd)
