@@ -2,8 +2,9 @@ package commands
 
 import (
 	"flag"
+	"fmt"
+	"notgit/internal/status"
 	"notgit/internal/tree"
-	"notgit/utils"
 	"os"
 )
 
@@ -16,8 +17,13 @@ func Status() error {
 	fs.Parse(os.Args[2:])
 
 	root := tree.Root()
+	staged := tree.Staged()
 
-	utils.PrintStruct(root)
+	modified, untracked := status.GetModifiedAndUntrackedFiles(root, staged)
+	fmt.Println("modified:")
+	fmt.Println(modified)
+	fmt.Println("untracked:")
+	fmt.Println(untracked)
 
 	return nil
 }

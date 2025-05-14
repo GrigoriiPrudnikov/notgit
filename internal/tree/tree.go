@@ -139,7 +139,6 @@ func getAllFiles() (map[string][]blob.Blob, error) {
 			return nil
 		}
 
-		fmt.Println(path)
 		dir := filepath.Dir(path)
 		b, err := blob.NewBlob(path)
 

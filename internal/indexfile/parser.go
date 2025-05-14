@@ -3,6 +3,7 @@ package indexfile
 import (
 	"bytes"
 	"notgit/internal/blob"
+	"notgit/internal/object"
 	"os"
 	"path/filepath"
 	"strings"
@@ -35,9 +36,14 @@ func Parse() ([]blob.Blob, error) {
 			continue
 		}
 
-		b, err := blob.NewBlob(filepath.Join(parts[2]))
+		content, err := object.Parse(parts[1])
 		if err != nil {
 			return nil, err
+		}
+		b := blob.Blob{
+			Path:    parts[2],
+			Hash:    parts[0],
+			Content: content,
 		}
 
 		b.Path = parts[2]
