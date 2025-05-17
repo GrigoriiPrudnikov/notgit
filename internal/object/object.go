@@ -4,6 +4,7 @@ import (
 	"notgit/utils"
 	"os"
 	"path/filepath"
+	"strings"
 )
 
 func Write(hash string, content []byte) error {
@@ -45,6 +46,8 @@ func Parse(hash string) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
+	content, err = utils.Decompress(content)
+	content = []byte(strings.Join(strings.Split(string(content), "\n")[1:], ""))
 
-	return utils.Decompress(content)
+	return content, err
 }

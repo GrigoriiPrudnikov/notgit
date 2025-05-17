@@ -10,19 +10,27 @@ import (
 func GetModifiedAndUntrackedFiles(all, staged *tree.Tree) (modified, untracked []string) {
 	modified, untracked = compare(all, staged)
 
-	for _, tree := range all.SubTrees {
-		found := findTree(staged.SubTrees, tree.Path)
-		modifiedSub, untrackedSub := GetModifiedAndUntrackedFiles(tree, found)
+	for _, t := range all.SubTrees {
+		var found *tree.Tree
+		if staged != nil {
+			found = findTree(staged.SubTrees, t.Path)
+		}
+		modifiedSub, untrackedSub := GetModifiedAndUntrackedFiles(t, found)
 
 		for _, path := range modifiedSub {
-			modified = append(modified, filepath.Join(tree.Path, path))
+			modified = append(modified, filepath.Join(t.Path, path))
 		}
 		for _, path := range untrackedSub {
-			untracked = append(untracked, filepath.Join(tree.Path, path))
+			untracked = append(untracked, filepath.Join(t.Path, path))
 		}
 	}
 
 	return
+}
+
+func GetStaged(head, staged *tree.Tree) []string {
+
+	return nil
 }
 
 func compare(all, staged *tree.Tree) (modified, untracked []string) {

@@ -40,13 +40,14 @@ func Parse() ([]blob.Blob, error) {
 		if err != nil {
 			return nil, err
 		}
+
 		b := blob.Blob{
-			Path:    parts[2],
-			Hash:    parts[0],
-			Content: content,
+			Permission: parts[0],
+			Path:       parts[2],
+			Hash:       parts[1],
+			Content:    content,
 		}
 
-		b.Path = parts[2]
 		stagedFiles = append(stagedFiles, b)
 	}
 

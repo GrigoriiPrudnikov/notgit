@@ -17,13 +17,15 @@ func Status() error {
 	fs.Parse(os.Args[2:])
 
 	root := tree.Root()
-	staged := tree.Staged()
+	stagedTree := tree.Staged()
 
-	modified, untracked := status.GetModifiedAndUntrackedFiles(root, staged)
+	modified, untracked := status.GetModifiedAndUntrackedFiles(root, stagedTree)
+
 	fmt.Println("modified:")
 	fmt.Println(modified)
 	fmt.Println("untracked:")
 	fmt.Println(untracked)
+	fmt.Println("staged:")
 
 	return nil
 }
