@@ -1,14 +1,12 @@
 package tree
 
 import (
-	"fmt"
 	"notgit/internal/blob"
 	"notgit/internal/object"
 	"strings"
 )
 
 func Parse(hash string) (*Tree, error) {
-	fmt.Println("trying to get", hash)
 	content, err := object.Parse(hash)
 	if err != nil {
 		return nil, err

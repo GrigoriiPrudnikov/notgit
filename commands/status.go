@@ -25,7 +25,6 @@ func Status() error {
 	fmt.Println(modified)
 	fmt.Println("untracked:")
 	fmt.Println(untracked)
-	fmt.Println("staged:")
 
 	return nil
 }

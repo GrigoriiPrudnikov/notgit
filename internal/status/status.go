@@ -1,14 +1,27 @@
 package status
 
 import (
-	"fmt"
 	"notgit/internal/blob"
 	"notgit/internal/tree"
 	"path/filepath"
 )
 
 func GetModifiedAndUntrackedFiles(all, staged *tree.Tree) (modified, untracked []string) {
-	modified, untracked = compare(all, staged)
+	difference := compare(all, staged)
+
+	for _, a := range difference {
+		if staged == nil {
+			untracked = append(untracked, a.Path)
+			continue
+		}
+
+		b := findBlob(staged.Blobs, a.Path)
+		if b == nil {
+			untracked = append(untracked, a.Path)
+		} else {
+			modified = append(modified, a.Path)
+		}
+	}
 
 	for _, t := range all.SubTrees {
 		var found *tree.Tree
@@ -28,31 +41,17 @@ func GetModifiedAndUntrackedFiles(all, staged *tree.Tree) (modified, untracked [
 	return
 }
 
-func GetStaged(head, staged *tree.Tree) []string {
-
-	return nil
-}
-
-func compare(all, staged *tree.Tree) (modified, untracked []string) {
-	if staged == nil {
-		for _, blob := range all.Blobs {
-			untracked = append(untracked, blob.Path)
+func compare(a, b *tree.Tree) (difference []blob.Blob) {
+	if b == nil {
+		for _, blob := range a.Blobs {
+			difference = append(difference, blob)
 		}
 		return
 	}
-	for _, blob := range all.Blobs {
-		found := findBlob(staged.Blobs, blob.Path)
-		if found == nil {
-			untracked = append(untracked, blob.Path)
-			continue
-		}
-
-		fmt.Println("found:", blob.Path)
-		fmt.Println(string(blob.Content))
-		fmt.Println(string(found.Content))
-
-		if !contentMatches(blob.Content, found.Content) {
-			modified = append(modified, blob.Path)
+	for _, blob := range a.Blobs {
+		found := findBlob(b.Blobs, blob.Path)
+		if found == nil || blob.Hash != found.Hash {
+			difference = append(difference, blob)
 		}
 	}
 
@@ -76,14 +75,4 @@ func findTree(t []*tree.Tree, name string) *tree.Tree {
 		}
 	}
 	return nil
-}
-
-func contentMatches(a, b []byte) bool {
-	for i := range a {
-		if a[i] != b[i] {
-			return false
-		}
-	}
-
-	return true
 }
