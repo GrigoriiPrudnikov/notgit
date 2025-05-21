@@ -16,7 +16,6 @@ var command = map[string]func() error{
 }
 
 func main() {
-
 	if len(os.Args) < 2 {
 		// print help
 		return

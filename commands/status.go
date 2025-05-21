@@ -4,7 +4,6 @@ import (
 	"flag"
 	"fmt"
 	"notgit/internal/status"
-	"notgit/internal/tree"
 	"os"
 )
 
@@ -16,11 +15,10 @@ func Status() error {
 	fs.BoolVar(&short, "short", false, "short")
 	fs.Parse(os.Args[2:])
 
-	root := tree.Root()
-	stagedTree := tree.Staged()
+	staged, modified, untracked := status.GetStatus()
 
-	modified, untracked := status.GetModifiedAndUntrackedFiles(root, stagedTree)
-
+	fmt.Println("staged:")
+	fmt.Println(staged)
 	fmt.Println("modified:")
 	fmt.Println(modified)
 	fmt.Println("untracked:")
