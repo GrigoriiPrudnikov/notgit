@@ -14,11 +14,7 @@ func Parse(hash string) (*Tree, error) {
 
 	root := &Tree{}
 
-	for i, line := range strings.Split(string(content), "\n") {
-		if i == 0 {
-			continue
-		}
-
+	for _, line := range strings.Split(string(content), "\n") {
 		parts := strings.Split(line, " ")
 		if len(parts) != 4 {
 			return nil, err

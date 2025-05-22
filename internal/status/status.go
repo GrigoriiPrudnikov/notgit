@@ -11,9 +11,10 @@ func GetStatus() (staged, modified, untracked []string) {
 	all := tree.Root()
 	stagedTree := tree.Staged()
 	head := commit.ParseHead()
-	var headTree *tree.Tree
 
+	var headTree *tree.Tree
 	var err error
+
 	if head != nil {
 		headTree, err = tree.Parse(head.Tree)
 		if err != nil {
