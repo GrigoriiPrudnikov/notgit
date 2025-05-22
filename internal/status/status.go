@@ -24,41 +24,21 @@ func GetStatus() (staged, modified, untracked []string) {
 	modifiedBlobs, untrackedBlobs := getModifiedAndUntracked(all, stagedTree)
 	stagedBlobs := getStaged(headTree, stagedTree)
 
-	for _, s := range stagedBlobs {
-		staged = append(staged, s.Path)
-	}
-	for _, u := range untrackedBlobs {
-		untracked = append(untracked, u.Path)
-	}
-	for _, m := range modifiedBlobs {
-		// check if modified blob is already staged
-		found := findBlob(stagedBlobs, m.Path)
-		if found == nil {
-			modified = append(modified, m.Path)
-			continue
-		}
-		if found.Hash != m.Hash {
-			modified = append(modified, m.Path)
-		}
-	}
+	staged = extractPaths(stagedBlobs)
+	untracked = extractPaths(untrackedBlobs)
+	modified = filterModified(modifiedBlobs, stagedBlobs)
 
 	return
 }
 
 func getModifiedAndUntracked(all, staged *tree.Tree) (modified, untracked []blob.Blob) {
-	difference := compare(all, staged)
+	diff := compare(all, staged)
 
-	for _, a := range difference {
-		if staged == nil {
-			untracked = append(untracked, a)
-			continue
-		}
-
-		b := findBlob(staged.Blobs, a.Path)
-		if b == nil {
-			untracked = append(untracked, a)
+	for _, b := range diff {
+		if staged == nil || findBlob(staged.Blobs, b.Path) == nil {
+			untracked = append(untracked, b)
 		} else {
-			modified = append(modified, a)
+			modified = append(modified, b)
 		}
 	}
 

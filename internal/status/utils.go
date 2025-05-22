@@ -40,3 +40,26 @@ func findTree(t []*tree.Tree, name string) *tree.Tree {
 	}
 	return nil
 }
+
+func extractPaths(blobs []blob.Blob) (paths []string) {
+	for _, blob := range blobs {
+		paths = append(paths, blob.Path)
+	}
+	return
+}
+
+func filterModified(modified, staged []blob.Blob) []string {
+	var res []string
+
+	for _, m := range modified {
+		found := findBlob(staged, m.Path)
+		if found == nil {
+			res = append(res, m.Path)
+		}
+		if found != nil && found.Hash != m.Hash {
+			res = append(res, m.Path)
+		}
+	}
+
+	return res
+}
