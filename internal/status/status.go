@@ -27,7 +27,7 @@ func GetStatus() (modifiedStaged, untrackedStaged, modified, untracked []string)
 	modifiedStagedBlobs, untrackedStagedBlobs := getModifiedAndUntracked(stagedTree, headTree)
 
 	untracked = extractPaths(untrackedBlobs)
-	modified = filterModified(modifiedBlobs, append(modifiedStagedBlobs, untrackedStagedBlobs...))
+	modified = extractPaths(modifiedBlobs)
 	modifiedStaged = extractPaths(modifiedStagedBlobs)
 	untrackedStaged = extractPaths(untrackedStagedBlobs)
 

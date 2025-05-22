@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"notgit/internal/status"
 	"os"
+	"slices"
 )
 
 func Status() error {
@@ -15,18 +16,23 @@ func Status() error {
 	fs.BoolVar(&short, "short", false, "short")
 	fs.Parse(os.Args[2:])
 
-	stagedModified, stagedUntracked, modified, untracked := status.GetStatus()
+	modifiedStaged, untrackedStaged, modified, untracked := status.GetStatus()
 
 	var indent string
-	if len(stagedUntracked) > 0 || len(untracked) > 0 {
+	if len(untrackedStaged) > 0 || len(untracked) > 0 {
 		indent = " "
 	}
 
-	for _, path := range stagedUntracked {
+	for _, path := range untrackedStaged {
 		fmt.Println(green("A")+indent, path)
 	}
-	for _, path := range stagedModified {
-		fmt.Println(green("M")+indent, path)
+	for _, path := range modifiedStaged {
+		if slices.Contains(modified, path) {
+			fmt.Println(green("M")+red("M"), path)
+
+		} else {
+			fmt.Println(green("M")+indent, path)
+		}
 	}
 	for _, path := range modified {
 		fmt.Println(red("M")+indent, path)
