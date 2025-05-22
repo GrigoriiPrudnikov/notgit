@@ -15,14 +15,33 @@ func Status() error {
 	fs.BoolVar(&short, "short", false, "short")
 	fs.Parse(os.Args[2:])
 
-	staged, modified, untracked := status.GetStatus()
+	stagedModified, stagedUntracked, modified, untracked := status.GetStatus()
 
-	fmt.Println("staged:")
-	fmt.Println(staged)
-	fmt.Println("modified:")
-	fmt.Println(modified)
-	fmt.Println("untracked:")
-	fmt.Println(untracked)
+	var indent string
+	if len(stagedUntracked) > 0 || len(untracked) > 0 {
+		indent = " "
+	}
+
+	for _, path := range stagedUntracked {
+		fmt.Println(green("A")+indent, path)
+	}
+	for _, path := range stagedModified {
+		fmt.Println(green("M")+indent, path)
+	}
+	for _, path := range modified {
+		fmt.Println(red("M")+indent, path)
+	}
+	for _, path := range untracked {
+		fmt.Println(red("??"), path)
+	}
 
 	return nil
+}
+
+func red(s string) string {
+	return "\033[31m" + s + "\033[0m"
+}
+
+func green(s string) string {
+	return "\033[32m" + s + "\033[0m"
 }
