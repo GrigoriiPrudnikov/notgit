@@ -16,14 +16,15 @@ func Status() error {
 	fs.BoolVar(&short, "short", false, "short")
 	fs.Parse(os.Args[2:])
 
-	modifiedStaged, untrackedStaged, modified, untracked := status.GetStatus()
+	modified, untracked := status.GetUnstaged()
+	modifiedStaged, added := status.GetStaged()
 
 	var indent string
-	if len(untrackedStaged) > 0 || len(untracked) > 0 {
+	if len(added) > 0 || len(untracked) > 0 {
 		indent = " "
 	}
 
-	for _, path := range untrackedStaged {
+	for _, path := range added {
 		fmt.Println(green("A")+indent, path)
 	}
 	for _, path := range modifiedStaged {
@@ -35,6 +36,9 @@ func Status() error {
 		}
 	}
 	for _, path := range modified {
+		if slices.Contains(modifiedStaged, path) {
+			continue
+		}
 		fmt.Println(red("M")+indent, path)
 	}
 	for _, path := range untracked {
