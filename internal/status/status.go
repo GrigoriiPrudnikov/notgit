@@ -7,33 +7,6 @@ import (
 	"path/filepath"
 )
 
-// TODO: split to GetStaged and GetUnstaged
-func GetStatus() (modifiedStaged, untrackedStaged, modified, untracked []string) {
-	all := tree.Root()
-	stagedTree := tree.Staged()
-	head := commit.ParseHead()
-
-	var headTree *tree.Tree
-	var err error
-
-	if head != nil {
-		headTree, err = tree.Parse(head.Tree)
-		if err != nil {
-			return nil, nil, nil, nil
-		}
-	}
-
-	modifiedBlobs, untrackedBlobs := getModifiedAndUntracked(all, stagedTree)
-	modifiedStagedBlobs, untrackedStagedBlobs := getModifiedAndUntracked(stagedTree, headTree)
-
-	untracked = extractPaths(untrackedBlobs)
-	modified = extractPaths(modifiedBlobs)
-	modifiedStaged = extractPaths(modifiedStagedBlobs)
-	untrackedStaged = extractPaths(untrackedStagedBlobs)
-
-	return
-}
-
 func GetStaged() (modified, added []string) {
 	stagedTree := tree.Staged()
 	head := commit.ParseHead()
