@@ -16,11 +16,11 @@ func Parse(hash string) (*Tree, error) {
 
 	for _, line := range strings.Split(string(content), "\n") {
 		parts := strings.Split(line, " ")
-		if len(parts) != 4 {
+		if len(parts) != 3 {
 			return nil, err
 		}
 
-		kind, hash, path := parts[1], parts[2], parts[3]
+		kind, hash, path := parts[0], parts[1], parts[2]
 
 		if kind == "blob" {
 			content, err := object.Parse(hash)

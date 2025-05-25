@@ -32,20 +32,19 @@ func Parse() ([]blob.Blob, error) {
 	for _, line := range lines {
 		parts := strings.Split(string(line), " ")
 
-		if len(parts) != 3 {
+		if len(parts) != 2 {
 			continue
 		}
 
-		content, err := object.Parse(parts[1])
+		content, err := object.Parse(parts[0])
 		if err != nil {
 			return nil, err
 		}
 
 		b := blob.Blob{
-			Permission: parts[0],
-			Path:       parts[2],
-			Hash:       parts[1],
-			Content:    content,
+			Path:    parts[1],
+			Hash:    parts[0],
+			Content: content,
 		}
 
 		stagedFiles = append(stagedFiles, b)

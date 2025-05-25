@@ -31,12 +31,15 @@ func Status() error {
 	}
 
 	for _, path := range added {
-		fmt.Println(green("A")+indent, path)
+		if slices.Contains(modified, path) {
+			fmt.Println(green("A")+red("M"), path)
+		} else {
+			fmt.Println(green("A")+indent, path)
+		}
 	}
 	for _, path := range modifiedStaged {
 		if slices.Contains(modified, path) {
 			fmt.Println(green("M")+red("M"), path)
-
 		} else {
 			fmt.Println(green("M")+indent, path)
 		}

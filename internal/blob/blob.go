@@ -14,17 +14,9 @@ func NewBlob(path string) (Blob, error) {
 		return Blob{}, err
 	}
 
-	info, err := os.Stat(path)
-	if err != nil {
-		return Blob{}, err
-	}
-
-	permission := fmt.Sprintf("%o", info.Mode().Perm())
-
 	blob := Blob{
-		Permission: permission,
-		Path:       filepath.Base(path),
-		Content:    b,
+		Path:    filepath.Base(path),
+		Content: b,
 	}
 
 	hash(&blob)

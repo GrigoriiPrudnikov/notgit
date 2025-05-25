@@ -1,7 +1,6 @@
 package tree
 
 import (
-	"fmt"
 	"notgit/internal/blob"
 	"notgit/utils"
 	"os"
@@ -36,8 +35,7 @@ func (t *Tree) Add(path, fullPath string) error {
 			// if subtree doesn't exist, creates it
 			if subtree == nil {
 				subtree = &Tree{
-					Path:       parts[0],
-					Permission: fmt.Sprintf("%o", info.Mode().Perm()),
+					Path: parts[0],
 				}
 				t.SubTrees = append(t.SubTrees, subtree)
 			}
@@ -86,8 +84,7 @@ func (t *Tree) Add(path, fullPath string) error {
 	}
 
 	subtree := Tree{
-		Path:       parts[0],
-		Permission: fmt.Sprintf("%o", info.Mode().Perm()),
+		Path: parts[0],
 	}
 
 	err = subtree.Add(filepath.Join(parts[1:]...), fullPath)

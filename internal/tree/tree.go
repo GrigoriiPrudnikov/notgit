@@ -53,10 +53,10 @@ func Root() *Tree {
 
 // For debug, remove later
 func (t *Tree) Print(indent string) {
-	fmt.Printf("%s- [Tree] %s %s (%s)\n", indent, t.Permission, t.Path, t.Hash)
+	fmt.Printf("%s- [Tree] %s (%s)\n", indent, t.Path, t.Hash)
 
 	for _, b := range t.Blobs {
-		fmt.Printf("%s  • [Blob] %s %s (%s)\n", indent, b.Permission, b.Path, b.Hash)
+		fmt.Printf("%s  • [Blob] %s (%s)\n", indent, b.Path, b.Hash)
 	}
 
 	for _, subtree := range t.SubTrees {
@@ -65,14 +65,8 @@ func (t *Tree) Print(indent string) {
 }
 
 func create(path string, files map[string][]blob.Blob) (*Tree, error) {
-	info, err := os.Stat(path)
-	if os.IsNotExist(err) {
-		return nil, err
-	}
-
 	root := Tree{
-		Path:       filepath.Base(path),
-		Permission: fmt.Sprintf("%o", info.Mode().Perm()),
+		Path: filepath.Base(path),
 	}
 
 	blobs := files[path]

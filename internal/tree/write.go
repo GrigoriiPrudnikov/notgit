@@ -18,7 +18,7 @@ func (t *Tree) Write() error {
 			return err
 		}
 
-		content = append(content, []byte(blob.Permission+" blob "+blob.Hash+" "+blob.Path+"\n")...)
+		content = append(content, []byte("blob "+blob.Hash+" "+blob.Path+"\n")...)
 	}
 
 	for _, subtree := range t.SubTrees {
@@ -27,7 +27,7 @@ func (t *Tree) Write() error {
 			return err
 		}
 
-		content = append(content, []byte(subtree.Permission+" tree "+subtree.Hash()+" "+subtree.Path+"\n")...)
+		content = append(content, []byte("tree "+subtree.Hash()+" "+subtree.Path+"\n")...)
 	}
 
 	header := fmt.Sprintf("tree %d\x00\n", len(content))
@@ -42,7 +42,7 @@ func (t *Tree) WriteIndex() error {
 	for _, entry := range t.getEntries() {
 		path := entry.path
 		blob := entry.blob
-		content = append(content, []byte(blob.Permission+" "+blob.Hash+" "+path+"\n")...)
+		content = append(content, []byte(blob.Hash+" "+path+"\n")...)
 	}
 
 	wd, err := os.Getwd()
