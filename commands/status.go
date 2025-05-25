@@ -24,6 +24,12 @@ func Status() error {
 		indent = " "
 	}
 
+	totalChanges := len(added) + len(modified) + len(modifiedStaged) + len(untracked)
+	if totalChanges == 0 {
+		fmt.Println("nothing to commit, working tree clean")
+		return nil
+	}
+
 	for _, path := range added {
 		fmt.Println(green("A")+indent, path)
 	}
