@@ -2,6 +2,7 @@ package commit
 
 import (
 	"fmt"
+	"notgit/internal/indexfile"
 	"notgit/internal/object"
 	"notgit/internal/tree"
 	"notgit/utils"
@@ -13,7 +14,11 @@ import (
 )
 
 func NewCommit(message, author string, parents []string) *Commit {
-	root := tree.Staged()
+	index, err := indexfile.Parse()
+	if err != nil {
+		return nil
+	}
+	root := tree.Staged(index)
 	t := time.Now()
 
 	c := &Commit{

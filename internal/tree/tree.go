@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"maps"
 	"notgit/internal/blob"
-	"notgit/internal/indexfile"
 	"notgit/utils"
 	"os"
 	"path/filepath"
@@ -13,12 +12,7 @@ import (
 )
 
 // Returns tree with all staged files
-func Staged() *Tree {
-	index, err := indexfile.Parse()
-	if err != nil {
-		return nil
-	}
-
+func Staged(index []blob.Blob) *Tree {
 	files := map[string][]blob.Blob{}
 
 	for _, staged := range index {

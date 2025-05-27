@@ -3,6 +3,8 @@ package commands
 import (
 	"errors"
 	"flag"
+	"notgit/internal/blob"
+	"notgit/internal/indexfile"
 	"notgit/internal/tree"
 	"notgit/utils"
 	"os"
@@ -42,9 +44,14 @@ func Add() error {
 		return errors.New("no arguments")
 	}
 
-	root := tree.Staged()
+	index, err := indexfile.Parse()
+	if err != nil {
+		return err
+	}
+	root := tree.Staged(index)
 
 	if all || slices.Contains(args, ".") {
+		root = tree.Staged(checkForDeleted(index))
 		dir, err := os.ReadDir(wd)
 		if err != nil {
 			return err
@@ -84,4 +91,16 @@ func Add() error {
 	err = root.WriteIndex()
 
 	return err
+}
+
+func checkForDeleted(index []blob.Blob) []blob.Blob {
+	var result []blob.Blob
+
+	for _, blob := range index {
+		_, err := os.Stat(blob.Path)
+		if !os.IsNotExist(err) {
+			result = append(result, blob)
+		}
+	}
+	return result
 }

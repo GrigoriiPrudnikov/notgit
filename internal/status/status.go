@@ -3,16 +3,20 @@ package status
 import (
 	"notgit/internal/blob"
 	"notgit/internal/commit"
+	"notgit/internal/indexfile"
 	"notgit/internal/tree"
 	"path/filepath"
 )
 
 func GetStaged() (modified, added, deleted []string) {
-	stagedTree := tree.Staged()
+	index, err := indexfile.Parse()
+	if err != nil {
+		return nil, nil, nil
+	}
+	stagedTree := tree.Staged(index)
 	head := commit.ParseHead()
 
 	var headTree *tree.Tree
-	var err error
 
 	if head != nil {
 		headTree, err = tree.Parse(head.Tree)
@@ -32,7 +36,11 @@ func GetStaged() (modified, added, deleted []string) {
 
 func GetUnstaged() (modified, untracked, deleted []string) {
 	all := tree.Root()
-	stagedTree := tree.Staged()
+	index, err := indexfile.Parse()
+	if err != nil {
+		return nil, nil, nil
+	}
+	stagedTree := tree.Staged(index)
 
 	modifiedBlobs, untrackedBlobs, deletedBlobs := getModifiedUntrackedDeleted(all, stagedTree)
 

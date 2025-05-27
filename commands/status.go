@@ -29,7 +29,7 @@ func Status() error {
 		if slices.Contains(modified, path) {
 			fmt.Println(green("A")+red("M"), path)
 		} else {
-			fmt.Println(green("A ") + path)
+			fmt.Println(green("A "), path)
 		}
 	}
 	for _, path := range modifiedStaged {
@@ -40,7 +40,7 @@ func Status() error {
 		}
 	}
 	for _, path := range deletedStaged {
-		fmt.Println(red("D "), path)
+		fmt.Println(green("D "), path)
 	}
 	for _, path := range modified {
 		if slices.Contains(modifiedStaged, path) {
