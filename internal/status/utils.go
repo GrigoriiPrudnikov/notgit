@@ -6,15 +6,31 @@ import (
 )
 
 func compare(a, b *tree.Tree) (difference []blob.Blob) {
+	if a == nil && b == nil {
+		return
+	}
 	if b == nil {
 		for _, blob := range a.Blobs {
 			difference = append(difference, blob)
 		}
 		return
 	}
+	if a == nil {
+		for _, blob := range b.Blobs {
+			difference = append(difference, blob)
+		}
+		return
+	}
+
 	for _, blob := range a.Blobs {
 		found := findBlob(b.Blobs, blob.Path)
 		if found == nil || blob.Hash != found.Hash {
+			difference = append(difference, blob)
+		}
+	}
+	for _, blob := range b.Blobs {
+		found := findBlob(a.Blobs, blob.Path)
+		if found == nil {
 			difference = append(difference, blob)
 		}
 	}
@@ -46,20 +62,4 @@ func extractPaths(blobs []blob.Blob) (paths []string) {
 		paths = append(paths, blob.Path)
 	}
 	return
-}
-
-func filterModified(modified, staged []blob.Blob) []string {
-	var res []string
-
-	for _, m := range modified {
-		found := findBlob(staged, m.Path)
-		if found == nil {
-			res = append(res, m.Path)
-		}
-		if found != nil && found.Hash != m.Hash {
-			res = append(res, m.Path)
-		}
-	}
-
-	return res
 }
