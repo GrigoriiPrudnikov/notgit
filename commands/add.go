@@ -88,9 +88,8 @@ func Add() error {
 	if err != nil {
 		return err
 	}
-	err = root.WriteIndex()
 
-	return err
+	return root.WriteIndex()
 }
 
 func checkForDeleted(index []blob.Blob) []blob.Blob {

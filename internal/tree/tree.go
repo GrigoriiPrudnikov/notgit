@@ -11,6 +11,10 @@ import (
 	"strings"
 )
 
+func NewTree() *Tree {
+	return &Tree{SubTrees: map[string]*Tree{}}
+}
+
 // Returns tree with all staged files
 func Staged(index []blob.Blob) *Tree {
 	files := map[string][]blob.Blob{}
@@ -46,22 +50,20 @@ func Root() *Tree {
 }
 
 // For debug, remove later
-func (t *Tree) Print(indent string) {
-	fmt.Printf("%s- [Tree] %s (%s)\n", indent, t.Path, t.Hash)
+func (t *Tree) Print(indent, treePath string) {
+	fmt.Printf("%s- [Tree] %s (%s)\n", indent, treePath, t.Hash)
 
 	for _, b := range t.Blobs {
 		fmt.Printf("%s  • [Blob] %s (%s)\n", indent, b.Path, b.Hash)
 	}
 
-	for _, subtree := range t.SubTrees {
-		subtree.Print(indent + "  ")
+	for subpath, subtree := range t.SubTrees {
+		subtree.Print(indent+"  ", subpath)
 	}
 }
 
 func create(path string, files map[string][]blob.Blob) (*Tree, error) {
-	root := Tree{
-		Path: filepath.Base(path),
-	}
+	root := NewTree()
 
 	blobs := files[path]
 	for _, blob := range blobs {
@@ -103,11 +105,11 @@ func create(path string, files map[string][]blob.Blob) (*Tree, error) {
 				return nil, err
 			}
 
-			root.SubTrees = append(root.SubTrees, subtree)
+			root.SubTrees[child.Name()] = subtree
 		}
 	}
 
-	return &root, err
+	return root, err
 }
 
 func getAllFiles() (map[string][]blob.Blob, error) {

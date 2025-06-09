@@ -77,23 +77,23 @@ func getModifiedUntrackedDeleted(all, staged *tree.Tree) (modified, untracked, d
 		}
 	}
 
-	for _, t := range all.SubTrees {
+	for path, t := range all.SubTrees {
 		var found *tree.Tree
 		if staged != nil {
-			found = findTree(staged.SubTrees, t.Path)
+			found = staged.SubTrees[path]
 		}
 		modifiedSub, untrackedSub, deletedSub := getModifiedUntrackedDeleted(t, found)
 
 		for _, mod := range modifiedSub {
-			mod.Path = filepath.Join(t.Path, mod.Path)
+			mod.Path = filepath.Join(path, mod.Path)
 			modified = append(modified, mod)
 		}
 		for _, untrack := range untrackedSub {
-			untrack.Path = filepath.Join(t.Path, untrack.Path)
+			untrack.Path = filepath.Join(path, untrack.Path)
 			untracked = append(untracked, untrack)
 		}
 		for _, del := range deletedSub {
-			del.Path = filepath.Join(t.Path, del.Path)
+			del.Path = filepath.Join(path, del.Path)
 			deleted = append(deleted, del)
 		}
 	}

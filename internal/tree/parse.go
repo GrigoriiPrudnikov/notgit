@@ -42,7 +42,7 @@ func Parse(hash string) (*Tree, error) {
 			if err != nil {
 				return nil, err
 			}
-			root.SubTrees = append(root.SubTrees, tree)
+			root.SubTrees[path] = tree
 		}
 	}
 

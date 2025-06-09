@@ -3,7 +3,6 @@ package tree
 import "notgit/internal/blob"
 
 type Tree struct {
-	Path     string
-	SubTrees []*Tree
+	SubTrees map[string]*Tree
 	Blobs    []blob.Blob
 }

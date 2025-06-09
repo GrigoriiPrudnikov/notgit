@@ -48,15 +48,6 @@ func findBlob(b []blob.Blob, name string) *blob.Blob {
 	return nil
 }
 
-func findTree(t []*tree.Tree, name string) *tree.Tree {
-	for _, tree := range t {
-		if tree.Path == name {
-			return tree
-		}
-	}
-	return nil
-}
-
 func extractPaths(blobs []blob.Blob) (paths []string) {
 	for _, blob := range blobs {
 		paths = append(paths, blob.Path)

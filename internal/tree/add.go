@@ -25,8 +25,8 @@ func (t *Tree) Add(path, fullPath string) error {
 			var subtree *Tree
 
 			// it checks if subtree already exists
-			for _, sub := range t.SubTrees {
-				if sub.Path == parts[0] {
+			for path, sub := range t.SubTrees {
+				if path == parts[0] {
 					subtree = sub
 					break
 				}
@@ -34,10 +34,11 @@ func (t *Tree) Add(path, fullPath string) error {
 
 			// if subtree doesn't exist, creates it
 			if subtree == nil {
-				subtree = &Tree{
-					Path: parts[0],
+				subtree = &Tree{}
+				if t.SubTrees == nil {
+					t.SubTrees = map[string]*Tree{}
 				}
-				t.SubTrees = append(t.SubTrees, subtree)
+				t.SubTrees[parts[0]] = subtree
 			}
 
 			entries, err := os.ReadDir(fullPath)
@@ -55,25 +56,25 @@ func (t *Tree) Add(path, fullPath string) error {
 			return nil
 		}
 
-		b, err := blob.NewBlob(fullPath)
+		newBlob, err := blob.NewBlob(fullPath)
 		if err != nil {
 			return err
 		}
 
 		for i, blob := range t.Blobs {
-			if blob.Path == b.Path {
-				t.Blobs[i].Content = b.Content
-				t.Blobs[i].Hash = b.Hash
+			if blob.Path == newBlob.Path {
+				t.Blobs[i].Content = newBlob.Content
+				t.Blobs[i].Hash = newBlob.Hash
 				return nil
 			}
 		}
 
-		t.Blobs = append(t.Blobs, b)
+		t.Blobs = append(t.Blobs, newBlob)
 		return nil
 	}
 
-	for _, subtree := range t.SubTrees {
-		if subtree.Path == parts[0] {
+	for path, subtree := range t.SubTrees {
+		if path == parts[0] {
 			err := subtree.Add(filepath.Join(parts[1:]...), fullPath)
 			if err != nil {
 				return err
@@ -83,16 +84,9 @@ func (t *Tree) Add(path, fullPath string) error {
 		}
 	}
 
-	subtree := Tree{
-		Path: parts[0],
-	}
+	subtree := Tree{}
 
-	err = subtree.Add(filepath.Join(parts[1:]...), fullPath)
-	if err != nil {
-		return err
-	}
+	t.SubTrees[parts[0]] = &subtree
 
-	t.SubTrees = append(t.SubTrees, &subtree)
-
-	return nil
+	return subtree.Add(filepath.Join(parts[1:]...), fullPath)
 }
