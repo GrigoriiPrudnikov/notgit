@@ -3,7 +3,7 @@ package commands
 import (
 	"fmt"
 	"notgit/internal/config"
-	"notgit/utils"
+	"notgit/internal/utils"
 	"os"
 	"strings"
 )

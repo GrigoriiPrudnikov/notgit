@@ -6,7 +6,7 @@ import (
 	"notgit/internal/blob"
 	"notgit/internal/indexfile"
 	"notgit/internal/tree"
-	"notgit/utils"
+	"notgit/internal/utils"
 	"os"
 	"path/filepath"
 	"slices"

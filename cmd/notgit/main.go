@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	"notgit/commands"
+	"notgit/internal/commands"
 	"os"
 )
 
@@ -21,7 +21,7 @@ func main() {
 		return
 	}
 
-	_, exists := command[os.Args[1]]
+	execute, exists := command[os.Args[1]]
 	if !exists {
 		// TODO: add help like this:
 		// The most similar commands are
@@ -32,7 +32,7 @@ func main() {
 		return
 	}
 
-	err := command[os.Args[1]]()
+	err := execute()
 	if err != nil {
 		fmt.Println("error:", err)
 	}

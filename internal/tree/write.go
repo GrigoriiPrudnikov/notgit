@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"notgit/internal/blob"
 	"notgit/internal/object"
-	"notgit/utils"
+	"notgit/internal/utils"
 	"os"
 	"path/filepath"
 )
