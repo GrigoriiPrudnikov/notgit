@@ -127,7 +127,7 @@ func setValue(args []string, global bool) error {
 
 	cfg[section][key] = value
 
-	err = config.Set(cfg, global)
+	err = config.Write(cfg, global)
 	if err != nil {
 		return err
 	}
@@ -152,7 +152,7 @@ func unsetValue(args []string, global bool) error {
 
 	delete(cfg[section], key)
 
-	err = config.Set(cfg, global)
+	err = config.Write(cfg, global)
 	if err != nil {
 		return err
 	}

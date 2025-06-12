@@ -1,10 +1,6 @@
 package config
 
 import (
-	"errors"
-	"os"
-	"path/filepath"
-
 	"gopkg.in/ini.v1"
 )
 
@@ -34,30 +30,4 @@ func Parse(global bool) (map[string]map[string]string, error) {
 	}
 
 	return result, nil
-}
-
-func getConfigPath(global bool) (string, error) {
-	var dir string
-	var err error
-
-	if global {
-		dir, err = os.UserHomeDir()
-	} else {
-		dir, err = os.Getwd()
-	}
-
-	if err != nil {
-		return "", err
-	}
-
-	configPath := filepath.Join(dir, ".notgitconfig")
-	if !global {
-		configPath = filepath.Join(dir, ".notgit/config")
-
-		if _, err := os.Stat(configPath); os.IsNotExist(err) {
-			return "", errors.New("not a notgit repository")
-		}
-	}
-
-	return configPath, nil
 }

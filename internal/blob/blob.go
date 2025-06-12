@@ -1,12 +1,16 @@
 package blob
 
 import (
-	"fmt"
-	"notgit/internal/object"
-	"notgit/utils"
+	"notgit/internal/utils"
 	"os"
 	"path/filepath"
 )
+
+type Blob struct {
+	Path    string
+	Hash    string
+	Content []byte
+}
 
 func NewBlob(path string) (Blob, error) {
 	b, err := os.ReadFile(path)
@@ -24,30 +28,29 @@ func NewBlob(path string) (Blob, error) {
 	return blob, err
 }
 
-func (blob *Blob) Write() error {
-	if blob.exists() {
-		return nil
-	}
+func hash(b *Blob) {
+	b.Hash = utils.Hash("blob", b.Content)
+}
 
+func (b *Blob) exists() bool {
 	wd, err := os.Getwd()
 	if err != nil {
-		return err
+		return false
 	}
 
 	objects := filepath.Join(wd, ".notgit", "objects")
+	dir := filepath.Join(objects, b.Hash[:2])
+	file := filepath.Join(dir, b.Hash[2:])
 
-	if _, err := os.Stat(objects); os.IsNotExist(err) {
-		err = os.MkdirAll(objects, 0755)
-		if err != nil {
-			return err
-		}
+	_, err = os.Stat(dir)
+	if os.IsNotExist(err) {
+		return false
 	}
 
-	content := blob.Content
-	header := fmt.Sprintf("blob %d\x00\n", len(content))
-	compressed := utils.Compress(header, content)
+	_, err = os.Stat(file)
+	if os.IsNotExist(err) {
+		return false
+	}
 
-	object.Write(blob.Hash, compressed)
-
-	return err
+	return true
 }

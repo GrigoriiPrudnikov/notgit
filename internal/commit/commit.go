@@ -1,17 +1,23 @@
 package commit
 
 import (
-	"fmt"
 	"notgit/internal/indexfile"
-	"notgit/internal/object"
 	"notgit/internal/tree"
-	"notgit/utils"
-	"os"
-	"path/filepath"
+	"notgit/internal/utils"
 	"strconv"
 	"strings"
 	"time"
 )
+
+type Commit struct {
+	Time      int64
+	Offset    string
+	Author    string
+	Committer string
+	Message   string
+	Tree      string
+	Parents   []*Commit
+}
 
 func NewCommit(message, author string, parents []string) *Commit {
 	index, err := indexfile.Parse()
@@ -41,102 +47,6 @@ func NewCommit(message, author string, parents []string) *Commit {
 	return c
 }
 
-func (c *Commit) Write() error {
-	content := c.GetContent()
-	header := fmt.Sprintf("commit %d\x00\n", len(content))
-
-	compressed := utils.Compress(header, content)
-	hash := c.Hash()
-
-	err := object.Write(hash, compressed)
-	if err != nil {
-		return err
-	}
-
-	err = os.WriteFile(filepath.Join(".notgit", "HEAD"), []byte(hash), 0644)
-
-	return err
-}
-
-func ParseHead() *Commit {
-	head, err := os.ReadFile(filepath.Join(".notgit", "HEAD"))
-	if err != nil {
-		return nil
-	}
-
-	return Parse(string(head))
-}
-
-func Parse(hash string) *Commit {
-	if len(hash) != 64 {
-		return nil
-	}
-
-	c := &Commit{}
-
-	dir, file := hash[0:2], hash[2:]
-	path := filepath.Join(".notgit", "objects", dir, file)
-
-	_, err := os.Stat(path)
-	if os.IsNotExist(err) {
-		return nil
-	}
-
-	content, err := os.ReadFile(path)
-	if err != nil {
-		return nil
-	}
-	content, err = utils.Decompress(content)
-	if err != nil {
-		return nil
-	}
-
-	if !strings.HasPrefix(string(content), "commit") {
-		return nil
-	}
-
-	lines := strings.Split(string(content), "\n")
-	for i, line := range lines {
-		if i == 0 {
-			continue
-		}
-
-		if line == "" {
-			break
-		}
-
-		prefix := strings.Split(line, " ")[0]
-		values := strings.Split(line, " ")[1:]
-
-		switch prefix {
-		case "author", "committer":
-			name, time, offset := parseNameTimeOffset(line)
-			c.Time = time
-			c.Offset = offset
-
-			if prefix == "author" {
-				c.Author = name
-				continue
-			}
-
-			c.Committer = name
-
-		case "tree":
-			c.Tree = values[0]
-
-		case "parent":
-			parent := Parse(values[0])
-			if parent != nil {
-				c.Parents = append(c.Parents, parent)
-			}
-		}
-	}
-
-	c.Message = lines[len(lines)-1]
-
-	return c
-}
-
 func (c *Commit) GetContent() []byte {
 	content := []string{
 		"tree " + c.Tree,
@@ -159,4 +69,10 @@ func parseNameTimeOffset(line string) (name string, time int64, offset string) {
 	time, _ = strconv.ParseInt(values[n-2], 10, 64)
 	offset = values[n-1]
 	return
+}
+
+func (c *Commit) Hash() string {
+	content := []byte(c.GetContent())
+
+	return utils.Hash("commit", content)
 }

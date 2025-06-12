@@ -2,29 +2,10 @@ package config
 
 import (
 	"errors"
+	"os"
+	"path/filepath"
 	"strings"
-
-	"gopkg.in/ini.v1"
 )
-
-func Set(c map[string]map[string]string, global bool) error {
-	path, err := getConfigPath(global)
-	if err != nil {
-		return err
-	}
-
-	config := ini.Empty()
-
-	for section, keys := range c {
-		for key, value := range keys {
-			config.Section(section).Key(key).SetValue(value)
-		}
-	}
-
-	err = config.SaveToIndent(path, "  ")
-
-	return err
-}
 
 // TODO: move it somewhere else
 func GetSectionAndKey(args []string) (string, string, error) {
@@ -43,4 +24,30 @@ func GetSectionAndKey(args []string) (string, string, error) {
 	}
 
 	return section, key, nil
+}
+
+func getConfigPath(global bool) (string, error) {
+	var dir string
+	var err error
+
+	if global {
+		dir, err = os.UserHomeDir()
+	} else {
+		dir, err = os.Getwd()
+	}
+
+	if err != nil {
+		return "", err
+	}
+
+	configPath := filepath.Join(dir, ".notgitconfig")
+	if !global {
+		configPath = filepath.Join(dir, ".notgit/config")
+
+		if _, err := os.Stat(configPath); os.IsNotExist(err) {
+			return "", errors.New("not a notgit repository")
+		}
+	}
+
+	return configPath, nil
 }

@@ -5,7 +5,7 @@ import (
 	"flag"
 	"notgit/internal/commit"
 	"notgit/internal/config"
-	"notgit/utils"
+	"notgit/internal/utils"
 	"os"
 	"path/filepath"
 )
