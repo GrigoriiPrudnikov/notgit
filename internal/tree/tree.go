@@ -173,7 +173,6 @@ func (t *Tree) Add(path, fullPath string) error {
 		for i, blob := range t.Blobs {
 			if blob.Path == newBlob.Path {
 				t.Blobs[i].Content = newBlob.Content
-				t.Blobs[i].Hash = newBlob.Hash
 				return nil
 			}
 		}
@@ -204,7 +203,7 @@ func (t *Tree) Hash() string {
 	content := []byte{}
 
 	for _, blob := range t.Blobs {
-		content = append(content, []byte("blob "+blob.Hash+" "+blob.Path+"\n")...)
+		content = append(content, []byte("blob "+blob.Hash()+" "+blob.Path+"\n")...)
 	}
 	for path, subtree := range t.SubTrees {
 		content = append(content, []byte("blob "+subtree.Hash()+" "+path+"\n")...)
@@ -239,4 +238,22 @@ func getAllFiles() (map[string][]blob.Blob, error) {
 		return nil
 	})
 	return files, err
+}
+
+// The getFiles function walks through the tree and returns map where key is path and value is blob hash
+func (t Tree) GetFiles() map[string]string {
+	files := map[string]string{}
+
+	for _, blob := range t.Blobs {
+		files[blob.Path] = blob.Hash()
+	}
+
+	for dir, subtree := range t.SubTrees {
+		subFiles := subtree.GetFiles()
+		for path, hash := range subFiles {
+			files[filepath.Join(dir, path)] = hash
+		}
+	}
+
+	return files
 }

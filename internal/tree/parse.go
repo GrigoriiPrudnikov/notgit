@@ -29,7 +29,6 @@ func Parse(hash string) (*Tree, error) {
 			}
 
 			b := blob.Blob{
-				Hash:    hash,
 				Path:    path,
 				Content: content,
 			}

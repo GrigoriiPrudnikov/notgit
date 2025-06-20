@@ -18,7 +18,7 @@ func (t *Tree) Write() error {
 			return err
 		}
 
-		content = append(content, []byte("blob "+blob.Hash+" "+blob.Path+"\n")...)
+		content = append(content, []byte("blob "+blob.Hash()+" "+blob.Path+"\n")...)
 	}
 
 	for path, subtree := range t.SubTrees {
@@ -43,7 +43,7 @@ func (t *Tree) WriteIndex() error {
 		fmt.Println(entry.path)
 		path := entry.path
 		blob := entry.blob
-		content = append(content, []byte(blob.Hash+" "+path+"\n")...)
+		content = append(content, []byte(blob.Hash()+" "+path+"\n")...)
 	}
 
 	wd, err := os.Getwd()

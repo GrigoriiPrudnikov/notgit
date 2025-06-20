@@ -43,7 +43,6 @@ func Parse() ([]blob.Blob, error) {
 
 		b := blob.Blob{
 			Path:    parts[1],
-			Hash:    parts[0],
 			Content: content,
 		}
 

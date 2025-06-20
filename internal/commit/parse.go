@@ -1,6 +1,7 @@
 package commit
 
 import (
+	"notgit/internal/tree"
 	"notgit/internal/utils"
 	"os"
 	"path/filepath"
@@ -84,4 +85,18 @@ func Parse(hash string) *Commit {
 	c.Message = lines[len(lines)-1]
 
 	return c
+}
+
+func ParseHeadTree() *tree.Tree {
+	head := ParseHead()
+	if head == nil {
+		return nil
+	}
+
+	t, err := tree.Parse(head.Tree)
+	if err != nil {
+		return nil
+	}
+
+	return t
 }

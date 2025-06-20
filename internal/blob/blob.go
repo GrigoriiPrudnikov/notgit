@@ -8,7 +8,6 @@ import (
 
 type Blob struct {
 	Path    string
-	Hash    string
 	Content []byte
 }
 
@@ -23,13 +22,11 @@ func NewBlob(path string) (Blob, error) {
 		Content: b,
 	}
 
-	hash(&blob)
-
 	return blob, err
 }
 
-func hash(b *Blob) {
-	b.Hash = utils.Hash("blob", b.Content)
+func (b *Blob) Hash() string {
+	return utils.Hash("blob", b.Content)
 }
 
 func (b *Blob) exists() bool {
@@ -39,8 +36,8 @@ func (b *Blob) exists() bool {
 	}
 
 	objects := filepath.Join(wd, ".notgit", "objects")
-	dir := filepath.Join(objects, b.Hash[:2])
-	file := filepath.Join(dir, b.Hash[2:])
+	dir := filepath.Join(objects, b.Hash()[:2])
+	file := filepath.Join(dir, b.Hash()[2:])
 
 	_, err = os.Stat(dir)
 	if os.IsNotExist(err) {

@@ -1,152 +1,87 @@
 package status
 
 import (
-	"notgit/internal/blob"
 	"notgit/internal/commit"
 	"notgit/internal/indexfile"
 	"notgit/internal/tree"
-	"path/filepath"
 )
 
-func GetStaged() (modified, added, deleted []string) {
-	index, err := indexfile.Parse()
-	if err != nil {
-		return nil, nil, nil
-	}
-	stagedTree := tree.Staged(index)
-	head := commit.ParseHead()
+const (
+	None = iota
+	Added
+	Modified
+	Deleted
+)
 
-	var headTree *tree.Tree
-
-	if head != nil {
-		headTree, err = tree.Parse(head.Tree)
-		if err != nil {
-			return nil, nil, nil
-		}
-	}
-
-	modifiedStagedBlobs, addedBlobs, deletedStagedBlobs := getModifiedUntrackedDeleted(stagedTree, headTree)
-
-	modified = extractPaths(modifiedStagedBlobs)
-	added = extractPaths(addedBlobs)
-	deleted = extractPaths(deletedStagedBlobs)
-
-	return
+type change struct {
+	Staged   int
+	Unstaged int
 }
 
-func GetUnstaged() (modified, untracked, deleted []string) {
-	all := tree.Root()
-	index, err := indexfile.Parse()
+func GetChanges() map[string]change {
+	indexfile, err := indexfile.Parse()
 	if err != nil {
-		return nil, nil, nil
+		return nil
 	}
-	stagedTree := tree.Staged(index)
 
-	modifiedBlobs, untrackedBlobs, deletedBlobs := getModifiedUntrackedDeleted(all, stagedTree)
+	worktree := tree.Root().GetFiles()
+	index := tree.Staged(indexfile).GetFiles()
+	head := commit.ParseHeadTree().GetFiles()
 
-	modified = extractPaths(modifiedBlobs)
-	untracked = extractPaths(untrackedBlobs)
-	deleted = extractPaths(deletedBlobs)
+	difference := map[string]change{}
+	all := union(worktree, index, head)
 
-	return
-}
+	for _, filePath := range all {
+		workEntry := worktree[filePath]
+		indexEntry := index[filePath]
+		headEntry := head[filePath]
 
-func getModifiedUntrackedDeleted(all, staged *tree.Tree) (modified, untracked, deleted []blob.Blob) {
-	diff := compare(all, staged)
-
-	for _, b := range diff {
-		var foundA, foundB *blob.Blob
-		if all != nil {
-			foundA = findBlob(all.Blobs, b.Path)
-		}
-		if staged != nil {
-			foundB = findBlob(staged.Blobs, b.Path)
-		}
-
-		if foundA == nil && foundB != nil {
-			deleted = append(deleted, b)
-			continue
-		}
-		if foundA != nil && foundB == nil {
-			untracked = append(untracked, b)
+		// no changes
+		if workEntry == indexEntry && workEntry == headEntry {
 			continue
 		}
 
-		if foundA != nil && foundB != nil && foundA.Hash != foundB.Hash {
-			modified = append(modified, b)
+		ch := change{}
+
+		if headEntry != indexEntry {
+			if headEntry == "" {
+				ch.Staged = Added
+			} else if indexEntry == "" {
+				ch.Staged = Deleted
+			} else {
+				ch.Staged = Modified
+			}
 		}
+
+		if indexEntry != workEntry {
+			if workEntry == "" {
+				ch.Unstaged = Deleted
+			} else if indexEntry == "" {
+				ch.Unstaged = Added
+			} else {
+				ch.Unstaged = Modified
+			}
+		}
+
+		difference[filePath] = ch
 	}
 
-	for path, t := range all.SubTrees {
-		var found *tree.Tree
-		if staged != nil {
-			found = staged.SubTrees[path]
-		}
-		modifiedSub, untrackedSub, deletedSub := getModifiedUntrackedDeleted(t, found)
-
-		for _, mod := range modifiedSub {
-			mod.Path = filepath.Join(path, mod.Path)
-			modified = append(modified, mod)
-		}
-		for _, untrack := range untrackedSub {
-			untrack.Path = filepath.Join(path, untrack.Path)
-			untracked = append(untracked, untrack)
-		}
-		for _, del := range deletedSub {
-			del.Path = filepath.Join(path, del.Path)
-			deleted = append(deleted, del)
-		}
-	}
-
-	return
+	return difference
 }
 
-func compare(a, b *tree.Tree) (difference []blob.Blob) {
-	if a == nil && b == nil {
-		return
-	}
-	if b == nil {
-		for _, blob := range a.Blobs {
-			difference = append(difference, blob)
-		}
-		return
-	}
-	if a == nil {
-		for _, blob := range b.Blobs {
-			difference = append(difference, blob)
-		}
-		return
-	}
+func union(m1, m2, m3 map[string]string) []string {
+	keys := make(map[string]struct{})
 
-	for _, blob := range a.Blobs {
-		found := findBlob(b.Blobs, blob.Path)
-		if found == nil || blob.Hash != found.Hash {
-			difference = append(difference, blob)
-		}
-	}
-	for _, blob := range b.Blobs {
-		found := findBlob(a.Blobs, blob.Path)
-		if found == nil {
-			difference = append(difference, blob)
+	for _, m := range []map[string]string{m1, m2, m3} {
+		for k := range m {
+			keys[k] = struct{}{}
 		}
 	}
 
-	return
-}
-
-func findBlob(b []blob.Blob, name string) *blob.Blob {
-	for _, blob := range b {
-		if blob.Path == name {
-			return &blob
-		}
+	result := make([]string, 0, len(keys))
+	for k := range keys {
+		result = append(result, k)
 	}
 
-	return nil
-}
-
-func extractPaths(blobs []blob.Blob) (paths []string) {
-	for _, blob := range blobs {
-		paths = append(paths, blob.Path)
-	}
-	return
+	return result
 }
