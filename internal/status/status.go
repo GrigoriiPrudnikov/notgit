@@ -37,7 +37,7 @@ func GetChanges() map[string]change {
 		headEntry := head[filePath]
 
 		// no changes
-		if workEntry == indexEntry && workEntry == headEntry {
+		if workEntry == indexEntry && indexEntry == headEntry {
 			continue
 		}
 

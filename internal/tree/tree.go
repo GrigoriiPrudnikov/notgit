@@ -39,8 +39,6 @@ func Staged(index []blob.Blob) *Tree {
 }
 
 func Root() *Tree {
-	files := map[string][]blob.Blob{}
-
 	files, err := getAllFiles()
 	if err != nil {
 		return nil
@@ -56,10 +54,10 @@ func Root() *Tree {
 
 // For debug, remove later
 func (t *Tree) Print(indent, treePath string) {
-	fmt.Printf("%s- [Tree] %s (%s)\n", indent, treePath, t.Hash)
+	fmt.Printf("%s- [Tree] %s (%s)\n", indent, treePath, t.Hash())
 
 	for _, b := range t.Blobs {
-		fmt.Printf("%s  • [Blob] %s (%s)\n", indent, b.Path, b.Hash)
+		fmt.Printf("%s  • [Blob] %s (%s)\n", indent, b.Path, b.Hash())
 	}
 
 	for subpath, subtree := range t.SubTrees {

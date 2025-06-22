@@ -90,12 +90,16 @@ func Parse(hash string) *Commit {
 func ParseHeadTree() *tree.Tree {
 	head := ParseHead()
 	if head == nil {
-		return nil
+		return tree.NewTree()
 	}
 
 	t, err := tree.Parse(head.Tree)
 	if err != nil {
 		return nil
+	}
+
+	if t == nil {
+		return tree.NewTree()
 	}
 
 	return t

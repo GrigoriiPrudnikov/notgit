@@ -22,7 +22,8 @@ func Parse(hash string) ([]byte, error) {
 		return nil, err
 	}
 	content, err = utils.Decompress(content)
-	content = []byte(strings.Join(strings.Split(string(content), "\n")[1:], ""))
+	// remove header
+	content = []byte(strings.Join(strings.Split(string(content), "\n")[1:], "\n"))
 
 	return content, err
 }
