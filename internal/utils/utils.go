@@ -144,7 +144,11 @@ func RepoInitialized(dir string) bool {
 	notgitdir := dir + "/.notgit"
 
 	if _, err := os.Stat(notgitdir); os.IsNotExist(err) {
-		return false
+		if dir == "/" {
+			return false
+		}
+
+		return RepoInitialized(filepath.Dir(dir))
 	}
 	return true
 }
