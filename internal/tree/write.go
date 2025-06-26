@@ -10,24 +10,9 @@ import (
 )
 
 func (t *Tree) Write() error {
-	content := []byte{}
-
-	for _, blob := range t.Blobs {
-		err := blob.Write()
-		if err != nil {
-			return err
-		}
-
-		content = append(content, []byte("blob "+blob.Hash()+" "+blob.Path+"\n")...)
-	}
-
-	for path, subtree := range t.SubTrees {
-		err := subtree.Write()
-		if err != nil {
-			return err
-		}
-
-		content = append(content, []byte("tree "+subtree.Hash()+" "+path+"\n")...)
+	content, err := t.GetContent()
+	if err != nil {
+		return err
 	}
 
 	header := fmt.Sprintf("tree %d\x00\n", len(content))
@@ -63,4 +48,28 @@ func (t *Tree) getEntries(path string) []blob.Blob {
 	}
 
 	return entries
+}
+
+func (t Tree) GetContent() ([]byte, error) {
+	content := []byte{}
+
+	for _, blob := range t.Blobs {
+		err := blob.Write()
+		if err != nil {
+			return nil, err
+		}
+
+		content = append(content, []byte("blob "+blob.Hash()+" "+blob.Path+"\n")...)
+	}
+
+	for path, subtree := range t.SubTrees {
+		err := subtree.Write()
+		if err != nil {
+			return nil, err
+		}
+
+		content = append(content, []byte("tree "+subtree.Hash()+" "+path+"\n")...)
+	}
+
+	return content, nil
 }

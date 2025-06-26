@@ -24,7 +24,7 @@ func GetChanges() map[string]change {
 		return nil
 	}
 
-	worktree := tree.Root().GetFiles()
+	worktree := tree.WorkTree().GetFiles()
 	index := tree.Staged(indexfile).GetFiles()
 	head := commit.ParseHeadTree().GetFiles()
 

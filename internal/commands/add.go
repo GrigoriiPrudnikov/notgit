@@ -41,7 +41,7 @@ func Add() error {
 	args := fs.Args()
 
 	if len(args) == 0 {
-		return errors.New("no arguments")
+		return errors.New("no path provided")
 	}
 
 	index, err := indexfile.Parse()

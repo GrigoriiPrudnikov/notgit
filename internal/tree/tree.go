@@ -38,7 +38,7 @@ func Staged(index []blob.Blob) *Tree {
 	return root
 }
 
-func Root() *Tree {
+func WorkTree() *Tree {
 	files, err := getAllFiles()
 	if err != nil {
 		return nil
