@@ -17,7 +17,6 @@ func Commit() error {
 	}
 
 	if !utils.RepoInitialized(wd) {
-		// TODO: add handling for parent directories (fatal: not a git repository (or any of the parent directories): .git)
 		return errors.New("not a notgit repository")
 	}
 

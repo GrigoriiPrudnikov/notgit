@@ -1,8 +1,8 @@
 package tree
 
 import (
-	"notgit/internal/blob"
 	"notgit/internal/object"
+	"path/filepath"
 	"strings"
 )
 
@@ -12,7 +12,7 @@ func Parse(hash string) (*Tree, error) {
 		return nil, err
 	}
 
-	root := &Tree{}
+	root := NewTree(".")
 
 	for _, line := range strings.Split(string(content), "\n")[:1] {
 		parts := strings.Split(line, " ")
@@ -23,17 +23,7 @@ func Parse(hash string) (*Tree, error) {
 		kind, hash, path := parts[0], parts[1], parts[2]
 
 		if kind == "blob" {
-			content, err := object.Parse(hash)
-			if err != nil {
-				return nil, err
-			}
-
-			b := blob.Blob{
-				Path:    path,
-				Content: content,
-			}
-
-			root.Blobs = append(root.Blobs, b)
+			root.Blobs[filepath.Base(path)] = hash
 		}
 
 		if kind == "tree" {
@@ -41,6 +31,7 @@ func Parse(hash string) (*Tree, error) {
 			if err != nil {
 				return nil, err
 			}
+			tree.Path = path
 			root.SubTrees[path] = tree
 		}
 	}

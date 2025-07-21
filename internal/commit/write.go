@@ -9,13 +9,18 @@ import (
 )
 
 func (c *Commit) Write() error {
+	err := c.Tree.Write()
+	if err != nil {
+		return err
+	}
+
 	content := c.GetContent()
 	header := fmt.Sprintf("commit %d\x00\n", len(content))
 
 	compressed := utils.Compress(header, content)
 	hash := c.Hash()
 
-	err := object.Write(hash, compressed)
+	err = object.Write(hash, compressed)
 	if err != nil {
 		return err
 	}

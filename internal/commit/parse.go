@@ -72,7 +72,13 @@ func Parse(hash string) *Commit {
 			c.Committer = name
 
 		case "tree":
-			c.Tree = values[0]
+			t, err := tree.Parse(values[0])
+			if err != nil {
+				println("here")
+				println(err.Error())
+				return nil
+			}
+			c.Tree = t
 
 		case "parent":
 			parent := Parse(values[0])
@@ -85,22 +91,4 @@ func Parse(hash string) *Commit {
 	c.Message = lines[len(lines)-1]
 
 	return c
-}
-
-func ParseHeadTree() *tree.Tree {
-	head := ParseHead()
-	if head == nil {
-		return tree.NewTree()
-	}
-
-	t, err := tree.Parse(head.Tree)
-	if err != nil {
-		return nil
-	}
-
-	if t == nil {
-		return tree.NewTree()
-	}
-
-	return t
 }

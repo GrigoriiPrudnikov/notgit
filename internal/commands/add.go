@@ -3,13 +3,10 @@ package commands
 import (
 	"errors"
 	"flag"
-	"notgit/internal/blob"
-	"notgit/internal/indexfile"
 	"notgit/internal/tree"
 	"notgit/internal/utils"
 	"os"
 	"path/filepath"
-	"slices"
 )
 
 func Add() error {
@@ -18,10 +15,8 @@ func Add() error {
 		return err
 	}
 
-	notgitDir := filepath.Join(wd, ".notgit")
-	if _, err := os.Stat(notgitDir); os.IsNotExist(err) {
-		// TODO: add handling for parent directories (fatal: not a git repository (or any of the parent directories): .git)
-		return errors.New("not a git repository")
+	if !utils.RepoInitialized(wd) {
+		return errors.New("not a notgit repository")
 	}
 
 	var all, force bool
@@ -44,62 +39,34 @@ func Add() error {
 		return errors.New("no path provided")
 	}
 
-	index, err := indexfile.Parse()
+	root, err := tree.LoadStaged()
 	if err != nil {
 		return err
 	}
-	root := tree.Staged(index)
 
-	if all || slices.Contains(args, ".") {
-		root = tree.Staged(checkForDeleted(index))
-		dir, err := os.ReadDir(wd)
-		if err != nil {
-			return err
+	for _, path := range args {
+		if !utils.InWorkingDirectory(path) {
+			return errors.New("path is not in working directory")
 		}
-		for _, child := range dir {
-			root.Add(child.Name(), child.Name())
-		}
-	}
 
-	for _, arg := range args {
-		arg = filepath.Clean(filepath.ToSlash(arg))
-
-		if arg == "." {
-			dir, err := os.ReadDir(wd)
+		if filepath.Clean(path) == "." {
+			entries, err := os.ReadDir(path)
 			if err != nil {
 				return err
 			}
-			for _, child := range dir {
-				root.Add(child.Name(), child.Name())
+
+			for _, entry := range entries {
+				root.Add(entry.Name())
 			}
 		}
 
-		if !utils.InWorkingDirectory(arg) {
-			return errors.New("'" + arg + "' is not in the working directory at '" + wd + "'")
-		}
-
-		err := root.Add(arg, arg)
+		err := root.Add(path)
 		if err != nil {
 			return err
 		}
 	}
 
-	err = root.Write()
-	if err != nil {
-		return err
-	}
+	utils.PrintStruct(root)
 
 	return root.WriteIndex()
-}
-
-func checkForDeleted(index []blob.Blob) []blob.Blob {
-	var result []blob.Blob
-
-	for _, blob := range index {
-		_, err := os.Stat(blob.Path)
-		if !os.IsNotExist(err) {
-			result = append(result, blob)
-		}
-	}
-	return result
 }

@@ -1,10 +1,8 @@
 package tree
 
 import (
-	"errors"
-	"fmt"
-	"maps"
 	"notgit/internal/blob"
+	"notgit/internal/indexfile"
 	"notgit/internal/utils"
 	"os"
 	"path/filepath"
@@ -12,246 +10,142 @@ import (
 )
 
 type Tree struct {
+	Path     string
 	SubTrees map[string]*Tree
-	Blobs    []blob.Blob
+	Blobs    map[string]string // key is relative path, value is hash
 }
 
-func NewTree() *Tree {
-	return &Tree{SubTrees: map[string]*Tree{}}
+func NewTree(path string) *Tree {
+	return &Tree{
+		Path:     path,
+		SubTrees: make(map[string]*Tree),
+		Blobs:    make(map[string]string),
+	}
 }
 
-// Returns tree with all staged files
-func Staged(index []blob.Blob) *Tree {
-	files := map[string][]blob.Blob{}
-
-	for _, staged := range index {
-		dir := filepath.Dir(staged.Path)
-		staged.Path = filepath.Base(staged.Path)
-		files[dir] = append(files[dir], staged)
+func (t *Tree) Hash() string {
+	content, err := t.GetContent()
+	if err != nil {
+		return ""
 	}
 
-	root, err := create(".", files)
-	if err != nil {
+	return utils.Hash("tree", content)
+}
+
+func (t Tree) BasePath() string {
+	return filepath.Base(t.Path)
+}
+
+func (t *Tree) Add(path string) error {
+	if utils.Ignored(path) {
 		return nil
 	}
 
-	return root
-}
+	info, err := os.Stat(path)
 
-func WorkTree() *Tree {
-	files, err := getAllFiles()
 	if err != nil {
+		return err
+	}
+	if os.IsNotExist(err) {
 		return nil
 	}
 
-	root, err := create(".", files)
-	if err != nil {
+	if info.IsDir() {
+		dir, err := os.ReadDir(path)
+		if err != nil {
+			return err
+		}
+		for _, entry := range dir {
+			if err := t.Add(filepath.Join(path, entry.Name())); err != nil {
+				return err
+			}
+		}
 		return nil
 	}
 
-	return root
+	blob, err := blob.NewBlob(path)
+	if err != nil {
+		return err
+	}
+
+	return t.addFile(path, blob.Hash())
 }
 
-// For debug, remove later
-func (t *Tree) Print(indent, treePath string) {
-	fmt.Printf("%s- [Tree] %s (%s)\n", indent, treePath, t.Hash())
-
-	for _, b := range t.Blobs {
-		fmt.Printf("%s  • [Blob] %s (%s)\n", indent, b.Path, b.Hash())
+func LoadWorktree(path string) (*Tree, error) {
+	if utils.Ignored(path) {
+		return nil, nil
 	}
 
-	for subpath, subtree := range t.SubTrees {
-		subtree.Print(indent+"  ", subpath)
-	}
-}
-
-func create(path string, files map[string][]blob.Blob) (*Tree, error) {
-	root := NewTree()
-
-	blobs := files[path]
-	for _, blob := range blobs {
-		root.Blobs = append(root.Blobs, blob)
-	}
-
-	children, err := os.ReadDir(path)
+	dir, err := os.ReadDir(path)
 	if err != nil {
 		return nil, err
 	}
 
-	for _, child := range children {
-		if !child.IsDir() {
-			continue
-		}
+	root := NewTree(path)
 
-		childPath := filepath.Join(path, child.Name())
-		childPath = filepath.Clean(childPath)
-		subdirs := []string{}
-
-		for k := range maps.Keys(files) {
-			subdirs = append(subdirs, k)
-		}
-
-		hasSubdir := false
-		for path := range files {
-			if strings.HasPrefix(path, childPath+string(os.PathSeparator)) {
-				hasSubdir = true
-				break
-			}
-		}
-
-		if hasSubdir || files[childPath] != nil {
-			subtree, err := create(childPath, files)
-			if errors.Is(err, os.ErrNotExist) {
-				continue
-			}
+	for _, entry := range dir {
+		if entry.IsDir() {
+			tree, err := LoadWorktree(filepath.Join(path, entry.Name()))
 			if err != nil {
 				return nil, err
 			}
-
-			root.SubTrees[child.Name()] = subtree
-		}
-	}
-
-	return root, err
-}
-
-func (t *Tree) Add(path, fullPath string) error {
-	if utils.Ignored(fullPath) {
-		return nil
-	}
-
-	info, err := os.Stat(fullPath)
-	if os.IsNotExist(err) {
-		return err
-	}
-
-	parts := strings.Split(path, "/")
-
-	if len(parts) == 1 {
-		if info.IsDir() {
-			var subtree *Tree
-
-			// it checks if subtree already exists
-			for path, sub := range t.SubTrees {
-				if path == parts[0] {
-					subtree = sub
-					break
-				}
+			if tree == nil {
+				continue
 			}
-
-			// if subtree doesn't exist, creates it
-			if subtree == nil {
-				subtree = &Tree{}
-				if t.SubTrees == nil {
-					t.SubTrees = map[string]*Tree{}
-				}
-				t.SubTrees[parts[0]] = subtree
-			}
-
-			entries, err := os.ReadDir(fullPath)
-			if err != nil {
-				return err
-			}
-
-			for _, entry := range entries {
-				err := subtree.Add(entry.Name(), filepath.Join(fullPath, entry.Name()))
-				if err != nil {
-					return err
-				}
-			}
-
-			return nil
+			root.SubTrees[tree.BasePath()] = tree
+			continue
 		}
 
-		newBlob, err := blob.NewBlob(fullPath)
-		if err != nil {
-			return err
-		}
-
-		for i, blob := range t.Blobs {
-			if blob.Path == newBlob.Path {
-				t.Blobs[i].Content = newBlob.Content
-				return nil
-			}
-		}
-
-		t.Blobs = append(t.Blobs, newBlob)
-		return nil
-	}
-
-	for path, subtree := range t.SubTrees {
-		if path == parts[0] {
-			err := subtree.Add(filepath.Join(parts[1:]...), fullPath)
-			if err != nil {
-				return err
-			}
-
-			return nil
-		}
-	}
-
-	subtree := Tree{}
-
-	t.SubTrees[parts[0]] = &subtree
-
-	return subtree.Add(filepath.Join(parts[1:]...), fullPath)
-}
-
-func (t *Tree) Hash() string {
-	content := []byte{}
-
-	for _, blob := range t.Blobs {
-		content = append(content, []byte("blob "+blob.Hash()+" "+blob.Path+"\n")...)
-	}
-	for path, subtree := range t.SubTrees {
-		content = append(content, []byte("blob "+subtree.Hash()+" "+path+"\n")...)
-	}
-
-	hex := utils.Hash("tree", content)
-	return hex
-}
-
-func getAllFiles() (map[string][]blob.Blob, error) {
-	files := map[string][]blob.Blob{}
-
-	err := filepath.WalkDir(".", func(path string, d os.DirEntry, err error) error {
-		if err != nil {
-			return err
-		}
 		if utils.Ignored(path) {
-			if d.IsDir() {
-				return filepath.SkipDir
-			}
-			return nil
-		}
-		if d.IsDir() {
-			return nil
+			continue
 		}
 
-		dir := filepath.Dir(path)
-		b, err := blob.NewBlob(path)
+		if utils.Ignored(filepath.Join(path, entry.Name())) {
+			continue
+		}
 
-		files[dir] = append(files[dir], b)
-
-		return nil
-	})
-	return files, err
+		b, err := blob.NewBlob(filepath.Join(path, entry.Name()))
+		if err != nil {
+			return nil, err
+		}
+		err = b.Write()
+		if err != nil {
+			return nil, err
+		}
+		root.Blobs[b.BasePath()] = b.Hash()
+	}
+	return root, nil
 }
 
-// The getFiles function walks through the tree and returns map where key is path and value is blob hash
-func (t Tree) GetFiles() map[string]string {
-	files := map[string]string{}
+func LoadStaged() (*Tree, error) {
+	root := NewTree(".")
 
-	for _, blob := range t.Blobs {
-		files[blob.Path] = blob.Hash()
+	index, err := indexfile.Parse()
+	if err != nil {
+		return nil, err
 	}
 
-	for dir, subtree := range t.SubTrees {
-		subFiles := subtree.GetFiles()
-		for path, hash := range subFiles {
-			files[filepath.Join(dir, path)] = hash
-		}
+	for _, b := range index {
+		root.addFile(b.Path, b.Hash())
 	}
 
-	return files
+	return root, nil
+}
+
+func (t *Tree) addFile(path, hash string) error {
+	if path == filepath.Base(path) {
+		t.Blobs[path] = hash
+		return nil
+	}
+
+	parts := strings.Split(path, string(filepath.Separator))
+
+	subdir := parts[0]
+	subTree, ok := t.SubTrees[subdir]
+	if !ok {
+		subTree = NewTree(subdir)
+		t.SubTrees[subdir] = subTree
+	}
+
+	return subTree.addFile(filepath.Join(parts[1:]...), hash)
 }

@@ -1,9 +1,9 @@
 package commit
 
 import (
-	"notgit/internal/indexfile"
 	"notgit/internal/tree"
 	"notgit/internal/utils"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -15,22 +15,21 @@ type Commit struct {
 	Author    string
 	Committer string
 	Message   string
-	Tree      string
+	Tree      *tree.Tree
 	Parents   []*Commit
 }
 
 func NewCommit(message, author string, parents []string) *Commit {
-	index, err := indexfile.Parse()
+	root, err := tree.LoadStaged()
 	if err != nil {
 		return nil
 	}
-	root := tree.Staged(index)
 	t := time.Now()
 
 	c := &Commit{
 		Time:      t.Unix(),
 		Offset:    t.Format("-0700"),
-		Tree:      root.Hash(),
+		Tree:      root,
 		Author:    author,
 		Committer: author,
 		Message:   message,
@@ -49,10 +48,14 @@ func NewCommit(message, author string, parents []string) *Commit {
 
 func (c *Commit) GetContent() []byte {
 	content := []string{
-		"tree " + c.Tree,
+		"tree " + c.Tree.Hash(),
 		"author " + c.Author + " " + strconv.FormatInt(c.Time, 10) + " " + c.Offset,
 		"committer " + c.Author + " " + strconv.FormatInt(c.Time, 10) + " " + c.Offset,
 	}
+
+	sort.Slice(c.Parents, func(i, j int) bool {
+		return c.Parents[i].Time > c.Parents[j].Time
+	})
 
 	for _, parent := range c.Parents {
 		content = append(content, "parent "+parent.Hash())

@@ -2,7 +2,7 @@ package tree
 
 import (
 	"fmt"
-	"notgit/internal/blob"
+	"maps"
 	"notgit/internal/object"
 	"notgit/internal/utils"
 	"os"
@@ -24,8 +24,9 @@ func (t *Tree) Write() error {
 func (t *Tree) WriteIndex() error {
 	content := []byte{}
 
-	for _, entry := range t.getEntries("") {
-		content = append(content, []byte(entry.Hash()+" "+entry.Path+"\n")...)
+	entries := t.getEntries()
+	for _, path := range utils.GetSortedKeys(entries) {
+		content = append(content, []byte(path+" "+entries[path]+"\n")...)
 	}
 
 	wd, err := os.Getwd()
@@ -37,14 +38,16 @@ func (t *Tree) WriteIndex() error {
 	return os.WriteFile(index, content, 0644)
 }
 
-func (t *Tree) getEntries(path string) []blob.Blob {
-	entries := []blob.Blob{}
+func (t *Tree) getEntries() map[string]string {
+	entries := make(map[string]string)
 
-	entries = append(entries, t.Blobs...)
+	for path, hash := range t.Blobs {
+		path = filepath.Clean(filepath.Join(t.Path, path))
+		entries[path] = hash
+	}
 
-	for subpath, subtree := range t.SubTrees {
-		fullSubPath := filepath.Join(path, subpath)
-		entries = append(entries, subtree.getEntries(fullSubPath)...)
+	for _, subtree := range t.SubTrees {
+		maps.Copy(entries, subtree.getEntries())
 	}
 
 	return entries
@@ -53,22 +56,19 @@ func (t *Tree) getEntries(path string) []blob.Blob {
 func (t Tree) GetContent() ([]byte, error) {
 	content := []byte{}
 
-	for _, blob := range t.Blobs {
-		err := blob.Write()
-		if err != nil {
-			return nil, err
-		}
+	subtreesPaths := utils.GetSortedKeys(t.SubTrees)
+	filesPaths := utils.GetSortedKeys(t.Blobs)
 
-		content = append(content, []byte("blob "+blob.Hash()+" "+blob.Path+"\n")...)
+	for _, treePath := range subtreesPaths {
+		subtree := t.SubTrees[treePath]
+		line := "tree " + treePath + " " + subtree.Hash() + "\n"
+		content = append(content, []byte(line)...)
 	}
 
-	for path, subtree := range t.SubTrees {
-		err := subtree.Write()
-		if err != nil {
-			return nil, err
-		}
-
-		content = append(content, []byte("tree "+subtree.Hash()+" "+path+"\n")...)
+	for _, filePath := range filesPaths {
+		hash := t.Blobs[filePath]
+		line := "blob " + filePath + " " + hash + "\n"
+		content = append(content, []byte(line)...)
 	}
 
 	return content, nil

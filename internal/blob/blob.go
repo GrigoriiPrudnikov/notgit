@@ -18,11 +18,15 @@ func NewBlob(path string) (Blob, error) {
 	}
 
 	blob := Blob{
-		Path:    filepath.Base(path),
+		Path:    path,
 		Content: b,
 	}
 
 	return blob, err
+}
+
+func (b Blob) BasePath() string {
+	return filepath.Base(b.Path)
 }
 
 func (b *Blob) Hash() string {

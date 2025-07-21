@@ -10,6 +10,7 @@ import (
 	"os"
 	"path/filepath"
 	"slices"
+	"sort"
 	"strings"
 )
 
@@ -48,66 +49,60 @@ func Hash(kind string, content []byte) string {
 	return fmt.Sprintf("%x", sum)
 }
 
+// Returns patterns from .notgitignore file
+func parseIgnoreFile() ([]string, error) {
+	wd, err := os.Getwd()
+	if err != nil {
+		return nil, err
+	}
+	data, err := os.ReadFile(filepath.Join(wd, ".notgitignore"))
+	if os.IsNotExist(err) {
+		return nil, nil
+	}
+
+	lines := strings.Split(string(data), "\n")
+	var patterns []string
+	for _, line := range lines {
+		trimmed := strings.TrimSpace(line)
+		if trimmed == "" || trimmed[0] == '#' {
+			continue
+		}
+		patterns = append(patterns, line)
+	}
+
+	return patterns, nil
+}
+
 var alwaysIgnored = []string{".git", ".notgit"}
 
-// Checks if a file or directory path should be ignored based on rules.
+// Returns true if given path is ignored (file is in .notgitignore)
 func Ignored(path string) bool {
-	base := filepath.Base(path)
-	if slices.Contains(alwaysIgnored, base) {
+	if slices.Contains(alwaysIgnored, path) {
 		return true
 	}
 
-	wd, err := os.Getwd()
+	ignored := false
+
+	patterns, err := parseIgnoreFile()
 	if err != nil {
 		return false
 	}
 
-	ignoreFile := filepath.Join(wd, ".notgitignore")
-	data, err := os.ReadFile(ignoreFile)
-	if err != nil {
-		return false
-	}
-
-	absPath, err := filepath.Abs(path)
-	if err != nil {
-		return false
-	}
-
-	relPath, err := filepath.Rel(wd, absPath)
-	if err != nil {
-		return false
-	}
-	relPath = filepath.ToSlash(relPath)
-
-	lines := strings.Split(string(data), "\n")
-	for _, pattern := range lines {
-		pattern = strings.TrimSpace(pattern)
-		if pattern == "" || strings.HasPrefix(pattern, "#") {
-			continue
+	for _, pattern := range patterns {
+		negated := strings.HasPrefix(pattern, "!")
+		if negated {
+			pattern = pattern[1:]
 		}
+		fullMatch, _ := filepath.Match(pattern, path)
+		baseMatch, _ := filepath.Match(pattern, filepath.Base(path))
+		dirMatch := strings.HasSuffix(pattern, "/") && strings.HasPrefix(path, pattern)
 
-		if strings.HasSuffix(pattern, "/") {
-			// Directory pattern: check if path starts with it
-			prefix := strings.TrimSuffix(pattern, "/")
-			if strings.HasPrefix(relPath, prefix+"/") || relPath == prefix {
-				return true
-			}
-		} else if strings.HasPrefix(pattern, "/") {
-			// Root-relative pattern
-			match, _ := filepath.Match(pattern[1:], relPath)
-			if match || relPath == pattern[1:] {
-				return true
-			}
-		} else {
-			// General pattern
-			match, _ := filepath.Match(pattern, relPath)
-			if match || filepath.Base(relPath) == pattern {
-				return true
-			}
+		if fullMatch || baseMatch || dirMatch {
+			ignored = !negated
 		}
 	}
 
-	return false
+	return ignored
 }
 
 func InWorkingDirectory(path string) bool {
@@ -151,4 +146,13 @@ func RepoInitialized(dir string) bool {
 		return RepoInitialized(filepath.Dir(dir))
 	}
 	return true
+}
+
+func GetSortedKeys[T any](m map[string]T) []string {
+	keys := make([]string, 0, len(m))
+	for k := range m {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	return keys
 }
