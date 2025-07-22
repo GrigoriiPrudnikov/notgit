@@ -71,6 +71,25 @@ func (t *Tree) Add(path string) error {
 	return t.addFile(path, blob.Hash())
 }
 
+// Returns found hash and flag indicating whether the file was found
+func (t Tree) Find(path string) (string, bool) {
+	println("serching in tree:", t.Path)
+	parts := strings.Split(path, string(filepath.Separator))
+
+	if len(parts) == 1 {
+		hash, ok := t.Blobs[path]
+		return hash, ok
+	}
+
+	subdir := parts[0]
+	subTree, ok := t.SubTrees[subdir]
+	if !ok {
+		return "", false
+	}
+
+	return subTree.Find(filepath.Join(parts[1:]...))
+}
+
 func LoadWorktree(path string) (*Tree, error) {
 	if utils.Ignored(path) {
 		return nil, nil
