@@ -63,17 +63,20 @@ func (t *Tree) Add(path string) error {
 		return nil
 	}
 
-	blob, err := blob.NewBlob(path)
+	b, err := blob.NewBlob(path)
 	if err != nil {
 		return err
 	}
 
-	return t.addFile(path, blob.Hash())
+	err = t.addFile(path, b.Hash())
+	if err != nil {
+		return err
+	}
+	return b.Write()
 }
 
 // Returns found hash and flag indicating whether the file was found
 func (t Tree) Find(path string) (string, bool) {
-	println("serching in tree:", t.Path)
 	parts := strings.Split(path, string(filepath.Separator))
 
 	if len(parts) == 1 {
@@ -141,11 +144,15 @@ func LoadStaged() (*Tree, error) {
 
 	index, err := indexfile.Parse()
 	if err != nil {
+		println("error parsing index file:", err.Error())
 		return nil, err
 	}
 
-	for _, b := range index {
-		root.addFile(b.Path, b.Hash())
+	for path, hash := range index {
+		err = root.addFile(path, hash)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	return root, nil
@@ -162,7 +169,7 @@ func (t *Tree) addFile(path, hash string) error {
 	subdir := parts[0]
 	subTree, ok := t.SubTrees[subdir]
 	if !ok {
-		subTree = NewTree(subdir)
+		subTree = NewTree(filepath.Join(t.Path, subdir))
 		t.SubTrees[subdir] = subTree
 	}
 

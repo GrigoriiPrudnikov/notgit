@@ -81,6 +81,12 @@ func Ignored(path string) bool {
 		return true
 	}
 
+	for _, pattern := range alwaysIgnored {
+		if strings.HasPrefix(path, pattern) {
+			return true
+		}
+	}
+
 	ignored := false
 
 	patterns, err := parseIgnoreFile()
@@ -123,6 +129,7 @@ func InWorkingDirectory(path string) bool {
 	return false
 }
 
+// FOR DEBUGGING ONLY
 func PrintStruct(v any) {
 	var buf bytes.Buffer
 	enc := json.NewEncoder(&buf)

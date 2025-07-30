@@ -7,23 +7,27 @@ import (
 	"strings"
 )
 
-func Parse(hash string) ([]byte, error) {
+// Returns header, content, error
+func Parse(hash string) ([]byte, []byte, error) {
 	wd, err := os.Getwd()
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	objects := filepath.Join(wd, ".notgit", "objects")
 
-	dir := filepath.Join(objects, hash[:2])
-	file := filepath.Join(dir, hash[2:])
+	dir := hash[:2]
+	file := hash[2:]
+	path := filepath.Join(objects, dir, file)
 
-	content, err := os.ReadFile(file)
+	content, err := os.ReadFile(path)
 	if err != nil {
-		return nil, err
+		println("here")
+		return nil, nil, err
 	}
 	content, err = utils.Decompress(content)
-	// remove header
+	header := []byte(strings.Split(string(content), "\n")[0])
+	header = header[:len(header)-1]
 	content = []byte(strings.Join(strings.Split(string(content), "\n")[1:], "\n"))
 
-	return content, err
+	return header, content, err
 }

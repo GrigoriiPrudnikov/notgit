@@ -3,6 +3,7 @@ package commands
 import (
 	"flag"
 	"fmt"
+	"notgit/internal/status"
 	"os"
 )
 
@@ -14,48 +15,54 @@ func Status() error {
 	fs.BoolVar(&short, "short", false, "short")
 	fs.Parse(os.Args[2:])
 
-	fmt.Println("not implemented")
+	worktreeAndIndexDiff, indexAndHeadDiff := status.GetRepoStatus()
 
-	// changes := status.GetChanges()
-	//
-	// if len(changes) == 0 {
-	// fmt.Println("nothing to commit, working tree clean")
-	// 	return nil
-	// }
-	//
-	// for path, change := range changes {
-	// 	statusString := [2]string{" ", " "}
-	//
-	// 	if change.Unstaged == status.Added {
-	// 		statusString[0] = red("?")
-	// 		statusString[1] = red("?")
-	// 	}
-	//
-	// 	if change.Unstaged == status.Modified {
-	// 		statusString[1] = red("M")
-	// 	}
-	// 	if change.Staged == status.Modified {
-	// 		statusString[0] = statusString[1]
-	// 		statusString[1] = green("M")
-	// 	}
-	// 	if change.Unstaged == status.Deleted {
-	// 		statusString[1] = red("D")
-	// 	}
-	//
-	// 	if change.Staged == status.Added {
-	// 		statusString[1] = green("A")
-	// 	}
-	//
-	// 	fmt.Println(statusString[0]+statusString[1], path)
-	// }
+	if len(worktreeAndIndexDiff)+len(indexAndHeadDiff) == 0 {
+		fmt.Println("nothing to commit, working tree clean")
+		return nil
+	}
+
+	// todo: add handling multiple statuses (e.g. added staged and modified not staged)
+	for path, status := range worktreeAndIndexDiff {
+		fmt.Printf("%s %s\n", getUnstagedSign(status), path)
+	}
+	for path, status := range indexAndHeadDiff {
+		fmt.Printf("%s %s\n", getStagedSign(status), path)
+	}
 
 	return nil
 }
 
-// func red(s string) string {
-// 	return "\033[31m" + s + "\033[0m"
-// }
-//
-// func green(s string) string {
-// 	return "\033[32m" + s + "\033[0m"
-// }
+func red(s string) string {
+	return "\033[31m" + s + "\033[0m"
+}
+
+func green(s string) string {
+	return "\033[32m" + s + "\033[0m"
+}
+
+func getStagedSign(s status.Status) string {
+	switch s {
+	case status.Added:
+		return green("A")
+	case status.Modified:
+		return green("M")
+	case status.Deleted:
+		return green("D")
+	}
+
+	return " "
+}
+
+func getUnstagedSign(s status.Status) string {
+	switch s {
+	case status.Added:
+		return red("?")
+	case status.Modified:
+		return red("M")
+	case status.Deleted:
+		return red("D")
+	}
+
+	return " "
+}

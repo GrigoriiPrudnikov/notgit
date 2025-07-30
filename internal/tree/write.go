@@ -3,6 +3,7 @@ package tree
 import (
 	"fmt"
 	"maps"
+	"notgit/internal/blob"
 	"notgit/internal/object"
 	"notgit/internal/utils"
 	"os"
@@ -10,6 +11,26 @@ import (
 )
 
 func (t *Tree) Write() error {
+	for _, subtree := range t.SubTrees {
+		err := subtree.Write()
+		if err != nil {
+			return err
+		}
+	}
+	for _, hash := range t.Blobs {
+		_, content, err := object.Parse(hash)
+		if err != nil {
+			return err
+		}
+
+		b := &blob.Blob{
+			Content: content,
+		}
+		if b.Write() != nil {
+			return err
+		}
+	}
+
 	content, err := t.GetContent()
 	if err != nil {
 		return err
@@ -42,8 +63,7 @@ func (t *Tree) getEntries() map[string]string {
 	entries := make(map[string]string)
 
 	for path, hash := range t.Blobs {
-		path = filepath.Clean(filepath.Join(t.Path, path))
-		entries[path] = hash
+		entries[filepath.Clean(filepath.Join(t.Path, path))] = hash
 	}
 
 	for _, subtree := range t.SubTrees {

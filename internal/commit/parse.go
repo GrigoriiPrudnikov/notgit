@@ -11,6 +11,7 @@ import (
 func ParseHead() *Commit {
 	head, err := os.ReadFile(filepath.Join(".notgit", "HEAD"))
 	if err != nil {
+		// println("error reading HEAD:", err)
 		return nil
 	}
 
@@ -42,6 +43,7 @@ func Parse(hash string) *Commit {
 	}
 
 	if !strings.HasPrefix(string(content), "commit") {
+		// TODO: handle error (given hash is not a commit)
 		return nil
 	}
 
@@ -72,9 +74,8 @@ func Parse(hash string) *Commit {
 			c.Committer = name
 
 		case "tree":
-			t, err := tree.Parse(values[0])
+			t, err := tree.Parse(values[0], ".")
 			if err != nil {
-				println("here")
 				println(err.Error())
 				return nil
 			}

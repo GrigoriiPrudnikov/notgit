@@ -1,37 +1,41 @@
 package tree
 
 import (
+	"errors"
 	"notgit/internal/object"
 	"path/filepath"
 	"strings"
 )
 
-func Parse(hash string) (*Tree, error) {
-	content, err := object.Parse(hash)
+func Parse(hash, path string) (*Tree, error) {
+	_, content, err := object.Parse(hash)
 	if err != nil {
 		return nil, err
 	}
 
-	root := NewTree(".")
+	root := NewTree(path)
 
-	for _, line := range strings.Split(string(content), "\n")[:1] {
-		parts := strings.Split(line, " ")
-		if len(parts) != 3 {
-			return nil, err
+	for _, line := range strings.Split(string(content), "\n") {
+		if line == "" {
+			continue
 		}
 
-		kind, hash, path := parts[0], parts[1], parts[2]
+		parts := strings.Split(line, " ")
+		if len(parts) != 3 {
+			return nil, errors.New("invalid tree line")
+		}
+
+		kind, path, hash := parts[0], parts[1], parts[2]
 
 		if kind == "blob" {
 			root.Blobs[filepath.Base(path)] = hash
 		}
 
 		if kind == "tree" {
-			tree, err := Parse(hash)
+			tree, err := Parse(hash, filepath.Clean(filepath.Join(root.Path, path)))
 			if err != nil {
 				return nil, err
 			}
-			tree.Path = path
 			root.SubTrees[path] = tree
 		}
 	}

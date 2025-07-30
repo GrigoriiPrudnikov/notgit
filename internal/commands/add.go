@@ -3,7 +3,8 @@ package commands
 import (
 	"errors"
 	"flag"
-	"notgit/internal/tree"
+	"notgit/internal/blob"
+	"notgit/internal/indexfile"
 	"notgit/internal/utils"
 	"os"
 	"path/filepath"
@@ -39,34 +40,58 @@ func Add() error {
 		return errors.New("no path provided")
 	}
 
-	root, err := tree.LoadStaged()
+	index, err := indexfile.Parse()
 	if err != nil {
 		return err
 	}
 
 	for _, path := range args {
-		if !utils.InWorkingDirectory(path) {
-			return errors.New("path is not in working directory")
+		info, err := os.Stat(path)
+		if err != nil {
+			return err
 		}
 
-		if filepath.Clean(path) == "." {
-			entries, err := os.ReadDir(path)
+		if info.IsDir() {
+			if utils.Ignored(path) {
+				continue
+			}
+
+			paths := []string{}
+			err := filepath.Walk(path, func(path string, info os.FileInfo, err error) error {
+				if err != nil {
+					return err
+				}
+				if info.IsDir() {
+					return nil
+				}
+				paths = append(paths, path)
+				return nil
+			})
 			if err != nil {
 				return err
 			}
 
-			for _, entry := range entries {
-				root.Add(entry.Name())
+			for _, path := range paths {
+				if utils.Ignored(path) {
+					continue
+				}
+
+				b, err := blob.NewBlob(path)
+				if err != nil {
+					return err
+				}
+				index[path] = b.Hash()
 			}
+			continue
 		}
 
-		err := root.Add(path)
+		b, err := blob.NewBlob(path)
 		if err != nil {
 			return err
 		}
+
+		index[path] = b.Hash()
 	}
 
-	utils.PrintStruct(root)
-
-	return root.WriteIndex()
+	return indexfile.Write(index)
 }

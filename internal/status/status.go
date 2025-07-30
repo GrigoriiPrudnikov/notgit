@@ -1,89 +1,89 @@
 package status
 
-// const (
-// 	None = iota
-// 	Added
-// 	Modified
-// 	Deleted
-// )
-//
-// type change struct {
-// 	Staged   int
-// 	Unstaged int
-// }
-//
-// func GetChanges() map[string]change {
-// 	indexfile, err := indexfile.Parse()
-// 	if err != nil {
-// 		return nil
-// 	}
-//
-// 	worktree := tree.().GetFiles()
-// 	index := tree.Staged(indexfile).GetFiles()
-// 	headCommit := commit.ParseHead()
-// 	var head map[string]string
-// 	if headCommit != nil {
-// 		head = headCommit.Tree.GetFiles()
-// 	}
-// 	println("head")
-// 	utils.PrintStruct(head)
-// 	println("index")
-// 	utils.PrintStruct(tree.Staged(indexfile))
-//
-// 	difference := map[string]change{}
-// 	all := union(worktree, index, head)
-//
-// 	for _, filePath := range all {
-// 		workEntry := worktree[filePath]
-// 		indexEntry := index[filePath]
-// 		headEntry := head[filePath]
-//
-// 		// no changes
-// 		if workEntry == indexEntry && indexEntry == headEntry {
-// 			continue
-// 		}
-//
-// 		ch := change{}
-//
-// 		if headEntry != indexEntry {
-// 			if headEntry == "" {
-// 				ch.Staged = Added
-// 			} else if indexEntry == "" {
-// 				ch.Staged = Deleted
-// 			} else {
-// 				ch.Staged = Modified
-// 			}
-// 		}
-//
-// 		if indexEntry != workEntry {
-// 			if workEntry == "" {
-// 				ch.Unstaged = Deleted
-// 			} else if indexEntry == "" {
-// 				ch.Unstaged = Added
-// 			} else {
-// 				ch.Unstaged = Modified
-// 			}
-// 		}
-//
-// 		difference[filePath] = ch
-// 	}
-//
-// 	return difference
-// }
-//
-// func union(m1, m2, m3 map[string]string) []string {
-// 	keys := make(map[string]struct{})
-//
-// 	for _, m := range []map[string]string{m1, m2, m3} {
-// 		for k := range m {
-// 			keys[k] = struct{}{}
-// 		}
-// 	}
-//
-// 	result := make([]string, 0, len(keys))
-// 	for k := range keys {
-// 		result = append(result, k)
-// 	}
-//
-// 	return result
-// }
+import (
+	"fmt"
+	"maps"
+	"notgit/internal/commit"
+	"notgit/internal/tree"
+	"path/filepath"
+)
+
+const (
+	None = iota
+	Added
+	Modified
+	Deleted
+)
+
+type Status int
+
+// Returns differences between worktree and index and between index and head
+func GetRepoStatus() (map[string]Status, map[string]Status) {
+	worktree, err := tree.LoadWorktree(".")
+	if err != nil {
+		return nil, nil
+	}
+	staged, err := tree.LoadStaged()
+	if err != nil {
+		fmt.Println("error loading staged tree:", err)
+		return nil, nil
+	}
+	headCommit := commit.ParseHead()
+	head := tree.NewTree(".")
+	if headCommit != nil {
+		head = headCommit.Tree
+	}
+
+	worktreeAndIndexDiff := compareTrees(worktree, staged)
+	indexAndHeadDiff := compareTrees(staged, head)
+
+	return worktreeAndIndexDiff, indexAndHeadDiff
+}
+
+func compareTrees(tree1, tree2 *tree.Tree) map[string]Status {
+	result := map[string]Status{}
+
+	// check for added and modified files
+	for path, hash := range tree1.Blobs {
+		hash2, found := tree2.Blobs[path]
+		fullPath := filepath.Clean(filepath.Join(tree1.Path, path))
+		if !found {
+			result[fullPath] = Added
+			continue
+		}
+
+		if hash != hash2 {
+			result[fullPath] = Modified
+		}
+	}
+
+	// check for deleted files
+	for path := range tree2.Blobs {
+		_, found := tree1.Blobs[path]
+		if !found {
+			result[path] = Deleted
+		}
+	}
+
+	// check subtrees
+	for path, subtree := range tree1.SubTrees {
+		subtree2 := tree2.SubTrees[path]
+		if subtree2 == nil {
+			subtree2 = tree.NewTree(subtree.Path)
+		}
+
+		maps.Copy(result, compareTrees(subtree, subtree2))
+	}
+
+	// check for deleted subtrees/files
+	for path, subtree := range tree2.SubTrees {
+		subtree2 := tree1.SubTrees[path]
+		if subtree2 == nil {
+			subtree2 = tree.NewTree(subtree.Path)
+		}
+
+		maps.Copy(result, compareTrees(subtree, subtree2))
+	}
+
+	return result
+}
