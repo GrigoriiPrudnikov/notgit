@@ -5,6 +5,7 @@ import (
 	"flag"
 	"notgit/internal/commit"
 	"notgit/internal/config"
+	"notgit/internal/status"
 	"notgit/internal/utils"
 	"os"
 	"path/filepath"
@@ -25,13 +26,14 @@ func Commit() error {
 	defaultAuthor := config["user"]["name"] + " <" + config["user"]["email"] + ">"
 
 	var message, author string
-	var amend bool
+	var amend, allowEmpty bool
 
 	fs := flag.NewFlagSet("commit", flag.ExitOnError)
 
 	fs.StringVar(&message, "m", "", "commit message")
 	fs.StringVar(&author, "author", defaultAuthor, "commit author")
 	fs.BoolVar(&amend, "amend", false, "amend previous commit")
+	fs.BoolVar(&allowEmpty, "allow-empty", false, "allow empty commit")
 
 	fs.Parse(os.Args[2:])
 
@@ -58,10 +60,14 @@ func Commit() error {
 		parents = append(parents, string(head))
 	}
 
-	// TODO: add --allow-empty option
+	worktreeAndIndexDiff, indexAndHeadDiff := status.GetRepoStatus()
+	if len(worktreeAndIndexDiff)+len(indexAndHeadDiff) == 0 && !allowEmpty {
+		return errors.New("nothing to commit, working tree clean")
+	}
+
 	c := commit.NewCommit(message, author, parents)
 	if c == nil {
-		return errors.New("nothing to commit")
+		return errors.New("commit creation failed")
 	}
 
 	return c.Write()

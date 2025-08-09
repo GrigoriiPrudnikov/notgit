@@ -21,6 +21,8 @@ func main() {
 		return
 	}
 
+	// todo: add support for flags like --version
+
 	execute, exists := command[os.Args[1]]
 	if !exists {
 		// TODO: add help like this:
@@ -34,6 +36,6 @@ func main() {
 
 	err := execute()
 	if err != nil {
-		fmt.Println("error:", err)
+		fmt.Println(err)
 	}
 }
