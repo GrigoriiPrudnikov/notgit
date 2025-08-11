@@ -8,6 +8,7 @@ import (
 	"notgit/internal/utils"
 	"os"
 	"path/filepath"
+	"slices"
 )
 
 func Add() error {
@@ -38,6 +39,10 @@ func Add() error {
 
 	if len(args) == 0 {
 		return nil
+	}
+
+	if slices.Contains(args, ".") {
+		all = true
 	}
 
 	index, err := indexfile.Parse()
@@ -76,6 +81,8 @@ func Add() error {
 					continue
 				}
 
+				// todo: here add check for --update flag
+
 				b, err := blob.NewBlob(path)
 				if err != nil {
 					return err
@@ -91,6 +98,17 @@ func Add() error {
 		}
 
 		index[path] = b.Hash()
+	}
+
+	// here add update logic
+	if all {
+		for path := range index {
+			_, err := os.Stat(path)
+
+			if os.IsNotExist(err) {
+				delete(index, path)
+			}
+		}
 	}
 
 	return indexfile.Write(index)

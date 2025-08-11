@@ -22,6 +22,7 @@ func Commit() error {
 	}
 
 	// TODO: make config always take data from local config and write it fomr global config on repo init
+	// make config.Parse recieve path instead of bool
 	config, err := config.Parse(true)
 	defaultAuthor := config["user"]["name"] + " <" + config["user"]["email"] + ">"
 

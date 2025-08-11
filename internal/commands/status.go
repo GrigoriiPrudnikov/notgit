@@ -23,11 +23,20 @@ func Status() error {
 	}
 
 	// todo: add handling multiple statuses (e.g. added staged and modified not staged)
+	// print files that have staged and unstaged changes
+	for path, unstagedStatus := range worktreeAndIndexDiff {
+		if stagedStatus, ok := indexAndHeadDiff[path]; ok {
+			fmt.Printf("%s%s %s\n", getUnstagedSign(unstagedStatus), getStagedSign(stagedStatus), path)
+			delete(worktreeAndIndexDiff, path)
+			delete(indexAndHeadDiff, path)
+		}
+	}
+
 	for path, status := range worktreeAndIndexDiff {
-		fmt.Printf("%s %s\n", getUnstagedSign(status), path)
+		fmt.Printf(" %s %s\n", getUnstagedSign(status), path)
 	}
 	for path, status := range indexAndHeadDiff {
-		fmt.Printf("%s %s\n", getStagedSign(status), path)
+		fmt.Printf("%s  %s\n", getStagedSign(status), path)
 	}
 
 	return nil
