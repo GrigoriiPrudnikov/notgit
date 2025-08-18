@@ -22,7 +22,6 @@ func Status() error {
 		return nil
 	}
 
-	// todo: add handling multiple statuses (e.g. added staged and modified not staged)
 	// print files that have staged and unstaged changes
 	for path, unstagedStatus := range worktreeAndIndexDiff {
 		if stagedStatus, ok := indexAndHeadDiff[path]; ok {
