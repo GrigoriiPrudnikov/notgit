@@ -1,13 +1,24 @@
 package commands
 
 import (
+	"errors"
 	"flag"
 	"fmt"
 	"notgit/internal/status"
+	"notgit/internal/utils"
 	"os"
 )
 
 func Status() error {
+	wd, err := os.Getwd()
+	if err != nil {
+		return err
+	}
+
+	if !utils.RepoInitialized(wd) {
+		return errors.New("not a notgit repository")
+	}
+
 	var short bool
 
 	fs := flag.NewFlagSet("status", flag.ExitOnError)

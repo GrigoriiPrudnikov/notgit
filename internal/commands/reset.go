@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"errors"
 	"flag"
 	"notgit/internal/tree"
 	"notgit/internal/utils"
@@ -8,6 +9,15 @@ import (
 )
 
 func Reset() error {
+	wd, err := os.Getwd()
+	if err != nil {
+		return err
+	}
+
+	if !utils.RepoInitialized(wd) {
+		return errors.New("not a notgit repository")
+	}
+
 	var hard bool
 
 	fs := flag.NewFlagSet("reset", flag.ExitOnError)
