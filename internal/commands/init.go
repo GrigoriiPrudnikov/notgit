@@ -63,7 +63,7 @@ func Init() error {
 	// files
 	files := map[string]string{
 		dir + "/.notgit/config":       strings.Join(configContent, "\n"),
-		dir + "/.notgit/HEAD":         "ref: refs/heads/master",
+		dir + "/.notgit/HEAD":         "",
 		dir + "/.notgit/description":  "Unnamed repository; edit this file to name it for git",
 		dir + "/.notgit/info/exclude": strings.Join(excludeContent, "\n"),
 	}

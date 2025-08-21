@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"notgit/internal/commands"
+	"notgit/internal/garbagecollector"
 	"os"
 )
 
@@ -40,6 +41,11 @@ func main() {
 	}
 
 	err := execute()
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	err = garbagecollector.CollectGarbage()
 	if err != nil {
 		fmt.Println(err)
 	}
