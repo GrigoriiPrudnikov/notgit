@@ -7,7 +7,7 @@ import (
 	"time"
 )
 
-func Log() error {
+func Log(_ string) error {
 	head := commit.ParseHead()
 
 	current := head

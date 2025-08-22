@@ -17,13 +17,8 @@ var excludeContent = []string{
 	"# *~",
 }
 
-func Init() error {
-	dir, err := os.Getwd()
-	if err != nil {
-		return err
-	}
-
-	if utils.RepoInitialized(dir) {
+func Init(wd string) error {
+	if utils.RepoInitialized(wd) {
 		fmt.Println("Notgit repository already initialized")
 		return nil
 	}
@@ -45,12 +40,12 @@ func Init() error {
 
 	// dirs
 	dirs := []string{
-		dir + "/.notgit/",
-		dir + "/.notgit/info/",
-		dir + "/.notgit/objects/",
-		dir + "/.notgit/refs/",
-		dir + "/.notgit/refs/heads/",
-		dir + "/.notgit/refs/tags/",
+		wd + "/.notgit/",
+		wd + "/.notgit/info/",
+		wd + "/.notgit/objects/",
+		wd + "/.notgit/refs/",
+		wd + "/.notgit/refs/heads/",
+		wd + "/.notgit/refs/tags/",
 	}
 
 	for _, d := range dirs {
@@ -62,10 +57,10 @@ func Init() error {
 
 	// files
 	files := map[string]string{
-		dir + "/.notgit/config":       strings.Join(configContent, "\n"),
-		dir + "/.notgit/HEAD":         "",
-		dir + "/.notgit/description":  "Unnamed repository; edit this file to name it for git",
-		dir + "/.notgit/info/exclude": strings.Join(excludeContent, "\n"),
+		wd + "/.notgit/config":       strings.Join(configContent, "\n"),
+		wd + "/.notgit/HEAD":         "",
+		wd + "/.notgit/description":  "Unnamed repository; edit this file to name it for git",
+		wd + "/.notgit/info/exclude": strings.Join(excludeContent, "\n"),
 	}
 
 	for f, content := range files {
@@ -75,6 +70,6 @@ func Init() error {
 		}
 	}
 
-	fmt.Println("empty NotGit repository initialized in " + dir + "/.notgit/")
+	fmt.Println("empty NotGit repository initialized in " + wd + "/.notgit/")
 	return nil
 }

@@ -5,7 +5,7 @@ import (
 	"notgit/internal/version"
 )
 
-func Version() error {
+func Version(_ string) error {
 	fmt.Println("notgit version", version.Version)
 
 	return nil

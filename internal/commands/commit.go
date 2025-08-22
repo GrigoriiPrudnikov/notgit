@@ -11,12 +11,7 @@ import (
 	"path/filepath"
 )
 
-func Commit() error {
-	wd, err := os.Getwd()
-	if err != nil {
-		return err
-	}
-
+func Commit(wd string) error {
 	if !utils.RepoInitialized(wd) {
 		return errors.New("not a notgit repository")
 	}
@@ -24,6 +19,9 @@ func Commit() error {
 	// TODO: make config always take data from local config and write it fomr global config on repo init
 	// make config.Parse recieve path instead of bool
 	config, err := config.Parse(true)
+	if err != nil {
+		return err
+	}
 	defaultAuthor := config["user"]["name"] + " <" + config["user"]["email"] + ">"
 
 	var message, author string

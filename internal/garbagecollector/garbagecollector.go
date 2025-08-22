@@ -8,12 +8,7 @@ import (
 )
 
 // Deletes all unused objects
-func CollectGarbage() error {
-	wd, err := os.Getwd()
-	if err != nil {
-		return err
-	}
-
+func CollectGarbage(wd string) error {
 	objectsDir := filepath.Join(wd, ".notgit", "objects")
 
 	seenObjects := map[string]bool{}
@@ -43,7 +38,6 @@ func CollectGarbage() error {
 		return err
 	}
 
-	println(len(dirs))
 	for _, dir := range dirs {
 		info, err := os.Stat(filepath.Join(objectsDir, dir.Name()))
 		if err != nil {

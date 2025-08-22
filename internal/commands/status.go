@@ -9,12 +9,7 @@ import (
 	"os"
 )
 
-func Status() error {
-	wd, err := os.Getwd()
-	if err != nil {
-		return err
-	}
-
+func Status(wd string) error {
 	if !utils.RepoInitialized(wd) {
 		return errors.New("not a notgit repository")
 	}

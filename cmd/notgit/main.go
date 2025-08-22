@@ -7,7 +7,7 @@ import (
 	"os"
 )
 
-var command = map[string]func() error{
+var command = map[string]func(wd string) error{
 	"add":     commands.Add,
 	"commit":  commands.Commit,
 	"config":  commands.Config,
@@ -25,7 +25,7 @@ func main() {
 	}
 
 	if len(args) == 2 && (args[1] == "-v" || args[1] == "--version") {
-		command["version"]()
+		command["version"]("")
 		return
 	}
 
@@ -40,12 +40,18 @@ func main() {
 		return
 	}
 
-	err := execute()
+	wd, err := os.Getwd()
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	err = execute(wd)
 	if err != nil {
 		fmt.Println(err)
 	}
 
-	err = garbagecollector.CollectGarbage()
+	err = garbagecollector.CollectGarbage(wd)
 	if err != nil {
 		fmt.Println(err)
 	}

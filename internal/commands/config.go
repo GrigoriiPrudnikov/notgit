@@ -13,7 +13,7 @@ type action struct {
 	fn   func() error
 }
 
-func Config() error {
+func Config(_ string) error {
 	// TODO: somehow rewrite
 	var global, local, get, getAll, unset, unsetAll, add, list, help bool
 

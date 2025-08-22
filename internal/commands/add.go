@@ -11,12 +11,7 @@ import (
 	"slices"
 )
 
-func Add() error {
-	wd, err := os.Getwd()
-	if err != nil {
-		return err
-	}
-
+func Add(wd string) error {
 	if !utils.RepoInitialized(wd) {
 		return errors.New("not a notgit repository")
 	}
