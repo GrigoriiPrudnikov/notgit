@@ -29,7 +29,7 @@ func Reset(wd string) error {
 		paths = append(paths, a)
 	}
 
-	tree, err := tree.LoadStaged()
+	tree, err := tree.LoadStaged(wd)
 	if err != nil {
 		return err
 	}

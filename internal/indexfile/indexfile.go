@@ -8,13 +8,10 @@ import (
 	"strings"
 )
 
-func Parse() (map[string]string, error) {
-	stagedFiles := make(map[string]string)
+type IndexFile map[string]string // filepath -> hash
 
-	wd, err := os.Getwd()
-	if err != nil {
-		return nil, err
-	}
+func Parse(wd string) (IndexFile, error) {
+	stagedFiles := make(IndexFile)
 
 	indexPath := filepath.Join(wd, ".notgit", "index")
 	if _, err := os.Stat(indexPath); os.IsNotExist(err) {
@@ -41,7 +38,7 @@ func Parse() (map[string]string, error) {
 	return stagedFiles, nil
 }
 
-func Write(stagedFiles map[string]string) error {
+func Write(stagedFiles IndexFile) error {
 	content := []byte{}
 	paths := utils.GetSortedKeys(stagedFiles)
 

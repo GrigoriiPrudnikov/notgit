@@ -9,33 +9,32 @@ import (
 	"time"
 )
 
+// TODO: change all types to strings (hash)
 type Commit struct {
-	Time      int64
-	Offset    string
-	Author    string
-	Committer string
-	Message   string
-	Tree      *tree.Tree
-	Parents   []*Commit
+	Time    int64
+	Offset  string
+	Author  string
+	Message string
+	Tree    *tree.Tree
+	Parents []*Commit
 }
 
 func NewCommit(message, author string, parents []string) *Commit {
-	root, err := tree.LoadStaged()
-	if err != nil {
-		return nil
-	}
 	t := time.Now()
 
 	c := &Commit{
-		Time:      t.Unix(),
-		Offset:    t.Format("-0700"),
-		Tree:      root,
-		Author:    author,
-		Committer: author,
-		Message:   message,
+		Time:    t.Unix(),
+		Offset:  t.Format("-0700"),
+		Author:  author,
+		Message: message,
+		Tree:    &tree.Tree{},
 	}
 
 	for _, parent := range parents {
+		if parent == "" {
+			continue
+		}
+
 		p := Parse(parent)
 		if p.Tree == c.Tree {
 			return nil

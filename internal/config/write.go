@@ -2,12 +2,7 @@ package config
 
 import "gopkg.in/ini.v1"
 
-func Write(c map[string]map[string]string, global bool) error {
-	path, err := getConfigPath(global)
-	if err != nil {
-		return err
-	}
-
+func Write(c map[string]map[string]string, path string) error {
 	config := ini.Empty()
 
 	for section, keys := range c {

@@ -139,10 +139,10 @@ func LoadWorktree(path string) (*Tree, error) {
 	return root, nil
 }
 
-func LoadStaged() (*Tree, error) {
+func LoadStaged(wd string) (*Tree, error) {
 	root := NewTree(".")
 
-	index, err := indexfile.Parse()
+	index, err := indexfile.Parse(wd)
 	if err != nil {
 		println("error parsing index file:", err.Error())
 		return nil, err

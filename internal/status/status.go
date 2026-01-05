@@ -18,12 +18,12 @@ const (
 type Status int
 
 // Returns differences between worktree and index and between index and head
-func GetRepoStatus() (map[string]Status, map[string]Status) {
+func GetRepoStatus(wd string) (map[string]Status, map[string]Status) {
 	worktree, err := tree.LoadWorktree(".")
 	if err != nil {
 		return nil, nil
 	}
-	staged, err := tree.LoadStaged()
+	staged, err := tree.LoadStaged(wd)
 	if err != nil {
 		fmt.Println("error loading staged tree:", err)
 		return nil, nil

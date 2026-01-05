@@ -21,7 +21,7 @@ func Status(wd string) error {
 	fs.BoolVar(&short, "short", false, "short")
 	fs.Parse(os.Args[2:])
 
-	worktreeAndIndexDiff, indexAndHeadDiff := status.GetRepoStatus()
+	worktreeAndIndexDiff, indexAndHeadDiff := status.GetRepoStatus(wd)
 
 	if len(worktreeAndIndexDiff)+len(indexAndHeadDiff) == 0 {
 		fmt.Println("nothing to commit, working tree clean")

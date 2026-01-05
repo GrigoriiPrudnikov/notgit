@@ -71,8 +71,6 @@ func Parse(hash string) *Commit {
 				continue
 			}
 
-			c.Committer = name
-
 		case "tree":
 			t, err := tree.Parse(values[0], ".")
 			if err != nil {

@@ -4,12 +4,7 @@ import (
 	"gopkg.in/ini.v1"
 )
 
-func Parse(global bool) (map[string]map[string]string, error) {
-	path, err := getConfigPath(global)
-	if err != nil {
-		return nil, err
-	}
-
+func Parse(path string) (map[string]map[string]string, error) {
 	cfg, err := ini.Load(path)
 	if err != nil {
 		return nil, err
