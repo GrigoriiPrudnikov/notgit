@@ -26,10 +26,10 @@ func CollectGarbage(wd string) error {
 			return err
 		}
 
-		if len(currentCommit.Parents) == 0 {
+		if currentCommit.Parent == "" {
 			currentCommit = nil
 		} else {
-			currentCommit = currentCommit.Parents[0]
+			currentCommit = commit.Parse(currentCommit.Parent)
 		}
 	}
 

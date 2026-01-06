@@ -3,7 +3,6 @@ package commit
 import (
 	"notgit/internal/tree"
 	"notgit/internal/utils"
-	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -16,10 +15,15 @@ type Commit struct {
 	Author  string
 	Message string
 	Tree    *tree.Tree
-	Parents []*Commit
+	Parent  string
 }
 
-func NewCommit(message, author string, parents []string) *Commit {
+func NewCommit(message, author string, parent string) *Commit {
+	root, err := tree.LoadStaged(".")
+	if err != nil {
+		return nil
+	}
+
 	t := time.Now()
 
 	c := &Commit{
@@ -27,19 +31,8 @@ func NewCommit(message, author string, parents []string) *Commit {
 		Offset:  t.Format("-0700"),
 		Author:  author,
 		Message: message,
-		Tree:    &tree.Tree{},
-	}
-
-	for _, parent := range parents {
-		if parent == "" {
-			continue
-		}
-
-		p := Parse(parent)
-		if p.Tree == c.Tree {
-			return nil
-		}
-		c.Parents = append(c.Parents, p)
+		Parent:  parent,
+		Tree:    root,
 	}
 
 	return c
@@ -52,13 +45,7 @@ func (c *Commit) GetContent() []byte {
 		"committer " + c.Author + " " + strconv.FormatInt(c.Time, 10) + " " + c.Offset,
 	}
 
-	sort.Slice(c.Parents, func(i, j int) bool {
-		return c.Parents[i].Time > c.Parents[j].Time
-	})
-
-	for _, parent := range c.Parents {
-		content = append(content, "parent "+parent.Hash())
-	}
+	content = append(content, "parent "+c.Parent)
 
 	content = append(content, "", c.Message)
 	return []byte(strings.Join(content, "\n"))

@@ -12,20 +12,24 @@ func Write(hash string, content []byte) error {
 	}
 	objects := filepath.Join(wd, ".notgit", "objects")
 
-	dir := filepath.Join(objects, hash[:2])
-	file := filepath.Join(dir, hash[2:])
+	dirPath := filepath.Join(objects, hash[:2])
+	filePath := filepath.Join(dirPath, hash[2:])
 
 	// create objects dir if not exists
-	if _, err := os.Stat(dir); os.IsNotExist(err) {
-		err = os.Mkdir(dir, 0755)
-		if err != nil {
+	if _, err := os.Stat(dirPath); os.IsNotExist(err) {
+		if err := os.MkdirAll(dirPath, 0755); err != nil {
 			return err
 		}
+		println("creating dir: ", dirPath)
 	}
 
-	if _, err := os.Stat(file); os.IsExist(err) {
+	if _, err := os.Stat(filePath); err == nil {
 		return nil
+	} else if !os.IsNotExist(err) {
+		return err
 	}
 
-	return os.WriteFile(file, content, 0644)
+	println("writing object: ", hash)
+
+	return os.WriteFile(filePath, content, 0644)
 }

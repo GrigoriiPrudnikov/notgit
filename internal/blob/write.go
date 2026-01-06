@@ -31,7 +31,5 @@ func (blob *Blob) Write() error {
 	header := fmt.Sprintf("blob %d\x00\n", len(content))
 	compressed := utils.Compress(header, content)
 
-	object.Write(blob.Hash(), compressed)
-
-	return err
+	return object.Write(blob.Hash(), compressed)
 }

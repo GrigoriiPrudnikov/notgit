@@ -138,6 +138,7 @@ func (r *Repo) Stage(path string) error {
 	if err != nil {
 		return errors.New("notgit: failed to write blob\n" + err.Error())
 	}
+	fmt.Println(path, "is staged and blob is written:", b.Hash())
 
 	r.Index[path] = b.Hash()
 
@@ -159,7 +160,7 @@ func (r *Repo) Commit(message string) error {
 
 	author := "AUTHOR"
 
-	cmt := commit.NewCommit(message, author, []string{r.Head})
+	cmt := commit.NewCommit(message, author, r.Head)
 
 	return cmt.Write()
 }
@@ -189,8 +190,8 @@ func (r *Repo) Log() error {
 		}
 
 		fmt.Printf("\033[33m%s\033[0m \033[34m%s\033[0m %s%s\n", current.Hash()[:7], adjusted, headIndicator, current.Message)
-		if len(current.Parents) > 0 {
-			current = current.Parents[0]
+		if current.Parent != "" {
+			current = commit.Parse(current.Parent)
 		} else {
 			current = nil
 		}
