@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	"notgit/internal/commands"
-	"notgit/internal/garbagecollector"
 	"notgit/internal/repo"
 	"notgit/internal/utils"
 	"os"
@@ -70,8 +69,8 @@ func main() {
 		os.Exit(1)
 	}
 
-	err = garbagecollector.CollectGarbage(wd)
-	if err != nil {
-		fmt.Println("notgit: failed to collect garbage\n" + err.Error())
-	}
+	// err = garbagecollector.CollectGarbage(wd)
+	// if err != nil {
+	// 	fmt.Println("notgit: failed to collect garbage\n" + err.Error())
+	// }
 }

@@ -138,7 +138,6 @@ func (r *Repo) Stage(path string) error {
 	if err != nil {
 		return errors.New("notgit: failed to write blob\n" + err.Error())
 	}
-	fmt.Println(path, "is staged and blob is written:", b.Hash())
 
 	r.Index[path] = b.Hash()
 

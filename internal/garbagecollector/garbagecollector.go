@@ -2,6 +2,7 @@ package garbagecollector
 
 import (
 	"notgit/internal/commit"
+	"notgit/internal/indexfile"
 	"notgit/internal/tree"
 	"os"
 	"path/filepath"
@@ -12,6 +13,15 @@ func CollectGarbage(wd string) error {
 	objectsDir := filepath.Join(wd, ".notgit", "objects")
 
 	seenObjects := map[string]bool{}
+
+	stagedFiles, err := indexfile.Parse(wd)
+	if err != nil {
+		return err
+	}
+
+	for _, hash := range stagedFiles {
+		seenObjects[hash] = true
+	}
 
 	currentCommit := commit.ParseHead()
 	if currentCommit == nil {

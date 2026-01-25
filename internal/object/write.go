@@ -20,7 +20,6 @@ func Write(hash string, content []byte) error {
 		if err := os.MkdirAll(dirPath, 0755); err != nil {
 			return err
 		}
-		println("creating dir: ", dirPath)
 	}
 
 	if _, err := os.Stat(filePath); err == nil {
@@ -28,8 +27,6 @@ func Write(hash string, content []byte) error {
 	} else if !os.IsNotExist(err) {
 		return err
 	}
-
-	println("writing object: ", hash)
 
 	return os.WriteFile(filePath, content, 0644)
 }

@@ -44,6 +44,7 @@ var Commands = map[string]Command{
 		AvailableOptions: map[string]string{},
 		Run:              Version,
 	},
+	// todo: add confirmation prompt
 	"clean": {
 		Description:      "FOR TESTING ONLY",
 		Usage:            "notgit clean",

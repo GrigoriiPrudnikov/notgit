@@ -1,7 +1,6 @@
 package commands
 
 import (
-	"fmt"
 	"notgit/internal/repo"
 )
 
@@ -26,7 +25,6 @@ func Add(r *repo.Repo, params []string, options map[string]string) error {
 		if err != nil {
 			return err
 		}
-		fmt.Println(p, " is staged")
 	}
 
 	return nil
