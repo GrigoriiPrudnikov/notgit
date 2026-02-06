@@ -6,6 +6,7 @@ import (
 	"notgit/internal/blob"
 	"notgit/internal/commit"
 	"notgit/internal/indexfile"
+	"notgit/internal/object"
 	"notgit/internal/utils"
 	"os"
 	"path/filepath"
@@ -19,14 +20,22 @@ type Repo struct {
 	Author  string
 	Index   indexfile.IndexFile
 	Objects []string
+	Store   object.Store
 }
 
 var (
 	ErrNotGitRepo = errors.New("notgit: not a repository")
 )
 
+func NewRepo(wd string) *Repo {
+	return &Repo{
+		Wd:    wd,
+		Store: object.NewFSStore(wd),
+	}
+}
+
 func ParseRepo(wd string) (*Repo, error) {
-	r := &Repo{Wd: wd}
+	r := NewRepo(wd)
 
 	if !utils.RepoInitialized(wd) {
 		return nil, ErrNotGitRepo
@@ -134,7 +143,7 @@ func (r *Repo) Stage(path string) error {
 	if err != nil {
 		return errors.New("notgit: failed to create blob\n" + err.Error())
 	}
-	err = b.Write()
+	err = b.Write(r.Store)
 	if err != nil {
 		return errors.New("notgit: failed to write blob\n" + err.Error())
 	}
@@ -161,7 +170,15 @@ func (r *Repo) Commit(message string) error {
 
 	cmt := commit.NewCommit(message, author, r.Head)
 
-	return cmt.Write()
+	// Persist commit and tree via Store; then write HEAD in this repo's wd.
+	hash, err := cmt.Write(r.Store)
+	if err != nil {
+		return err
+	}
+
+	r.Head = hash
+
+	return os.WriteFile(filepath.Join(r.Wd, ".notgit", "HEAD"), []byte(hash), 0644)
 }
 
 func (r *Repo) Log() error {

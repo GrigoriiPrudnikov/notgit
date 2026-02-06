@@ -42,7 +42,7 @@ func main() {
 		}
 
 		action := commands.Commands[command].Run
-		r := &repo.Repo{Wd: wd}
+		r := repo.NewRepo(wd)
 		err = action(r, params, opts)
 
 		if err != nil {

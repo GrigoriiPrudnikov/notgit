@@ -3,6 +3,7 @@ package tree
 import (
 	"notgit/internal/blob"
 	"notgit/internal/indexfile"
+	"notgit/internal/object"
 	"notgit/internal/utils"
 	"os"
 	"path/filepath"
@@ -36,7 +37,9 @@ func (t Tree) BasePath() string {
 	return filepath.Base(t.Path)
 }
 
-func (t *Tree) Add(path string) error {
+// Add records a path in the tree and writes its blob via the provided Store,
+// so callers no longer have to thread the working directory into tree logic.
+func (t *Tree) Add(path string, store object.Store) error {
 	if utils.Ignored(path) {
 		return nil
 	}
@@ -56,7 +59,7 @@ func (t *Tree) Add(path string) error {
 			return err
 		}
 		for _, entry := range dir {
-			if err := t.Add(filepath.Join(path, entry.Name())); err != nil {
+			if err := t.Add(filepath.Join(path, entry.Name()), store); err != nil {
 				return err
 			}
 		}
@@ -72,7 +75,7 @@ func (t *Tree) Add(path string) error {
 	if err != nil {
 		return err
 	}
-	return b.Write()
+	return b.Write(store)
 }
 
 // Returns found hash and flag indicating whether the file was found
@@ -93,7 +96,9 @@ func (t Tree) Find(path string) (string, bool) {
 	return subTree.Find(filepath.Join(parts[1:]...))
 }
 
-func LoadWorktree(path string) (*Tree, error) {
+// LoadWorktree walks the working tree, writing blobs through the provided Store
+// instead of constructing paths using a wd string directly.
+func LoadWorktree(path string, store object.Store) (*Tree, error) {
 	if utils.Ignored(path) {
 		return nil, nil
 	}
@@ -107,7 +112,7 @@ func LoadWorktree(path string) (*Tree, error) {
 
 	for _, entry := range dir {
 		if entry.IsDir() {
-			tree, err := LoadWorktree(filepath.Join(path, entry.Name()))
+			tree, err := LoadWorktree(filepath.Join(path, entry.Name()), store)
 			if err != nil {
 				return nil, err
 			}
@@ -130,8 +135,7 @@ func LoadWorktree(path string) (*Tree, error) {
 		if err != nil {
 			return nil, err
 		}
-		err = b.Write()
-		if err != nil {
+		if err := b.Write(store); err != nil {
 			return nil, err
 		}
 		root.Blobs[b.BasePath()] = b.Hash()
@@ -149,8 +153,7 @@ func LoadStaged(wd string) (*Tree, error) {
 	}
 
 	for path, hash := range index {
-		err = root.addFile(path, hash)
-		if err != nil {
+		if err := root.addFile(path, hash); err != nil {
 			return nil, err
 		}
 	}
