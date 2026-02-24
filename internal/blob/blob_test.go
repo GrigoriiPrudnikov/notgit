@@ -47,7 +47,6 @@ func TestBlobExists(t *testing.T) {
 		t.Error(err)
 	}
 
-	// Assert by checking the filesystem, since Blob no longer knows about wd.
 	if _, err := os.Stat(filepath.Join(tempDir, ".notgit", "objects", b.Hash()[:2], b.Hash()[2:])); os.IsNotExist(err) {
 		t.Error("blob should exist")
 	}
