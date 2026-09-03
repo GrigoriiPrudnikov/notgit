@@ -71,21 +71,14 @@ func Parse(hash string) *Commit {
 				continue
 			}
 
-			c.Committer = name
-
 		case "tree":
-			t, err := tree.Parse(values[0], ".")
+			c.Tree, err = tree.Parse(values[0], ".")
 			if err != nil {
-				println(err.Error())
 				return nil
 			}
-			c.Tree = t
 
 		case "parent":
-			parent := Parse(values[0])
-			if parent != nil {
-				c.Parents = append(c.Parents, parent)
-			}
+			c.Parent = values[0]
 		}
 	}
 

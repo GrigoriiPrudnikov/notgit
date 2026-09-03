@@ -41,9 +41,8 @@ func Decompress(b []byte) ([]byte, error) {
 	return out.Bytes(), nil
 }
 
-func Hash(kind string, content []byte) string {
-	header := fmt.Sprintf("%s %d\x00\n", kind, len(content))
-	data := append([]byte(header), content...)
+func Hash(header string, content []byte) string {
+	data := append([]byte(header+"\n"), content...)
 	sum := sha256.Sum256(data)
 
 	return fmt.Sprintf("%x", sum)
@@ -162,4 +161,92 @@ func GetSortedKeys[T any](m map[string]T) []string {
 	}
 	sort.Strings(keys)
 	return keys
+}
+
+type parsedArgs struct {
+	Params []string
+	Opts   map[string]string
+}
+
+// If flag is bool, it will be set to "true", otherwise it will be set to "false"
+func ParseArgs(args []string) (*parsedArgs, error) {
+	parsed := &parsedArgs{}
+	opts := make(map[string]string)
+	params := []string{}
+
+	for i := 0; i < len(args); i++ {
+		arg := args[i]
+		isOpt := arg[0] == '-'
+
+		if isOpt {
+			key, value := arg, ""
+
+			hasTwoDashes := key[0] == '-' && key[1] == '-'
+			if hasTwoDashes {
+				key = key[2:]
+			} else {
+				key = key[1:]
+			}
+
+			if strings.Contains(key, "=") {
+				parts := strings.Split(key, "=")
+				if len(parts) != 2 {
+					return nil, fmt.Errorf("invalid argument: %s", arg)
+				}
+				key = parts[0]
+				value = parts[1]
+			} else if i+1 == len(args) || args[i+1][0] == '-' {
+				value = "true"
+			} else {
+				value = args[i+1]
+				i++
+			}
+
+			opts[key] = value
+
+			continue
+		}
+
+		params = append(params, arg)
+	}
+
+	parsed.Params = params
+	parsed.Opts = opts
+	return parsed, nil
+}
+
+func isEqualSlice[T comparable](a, b []T) bool {
+	if len(a) != len(b) {
+		return false
+	}
+
+	for i := range a {
+		if a[i] != b[i] {
+			return false
+		}
+	}
+	for k, v := range b {
+		if a[k] != v {
+			return false
+		}
+	}
+	return true
+}
+
+func isEqualMap[K comparable, V comparable](a, b map[K]V) bool {
+	if len(a) != len(b) {
+		return false
+	}
+
+	for k, v := range a {
+		if b[k] != v {
+			return false
+		}
+	}
+	for k, v := range b {
+		if a[k] != v {
+			return false
+		}
+	}
+	return true
 }

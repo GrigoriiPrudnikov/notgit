@@ -5,27 +5,34 @@ import (
 	"path/filepath"
 )
 
-func Write(hash string, content []byte) error {
-	wd, err := os.Getwd()
-	if err != nil {
+type Store interface {
+	Write(hash string, content []byte) error
+}
+
+type FSStore struct {
+	wd string
+}
+
+func NewFSStore(wd string) Store {
+	return &FSStore{wd: wd}
+}
+
+func (s *FSStore) Write(hash string, content []byte) error {
+	objects := filepath.Join(s.wd, ".notgit", "objects")
+
+	dirPath := filepath.Join(objects, hash[:2])
+	filePath := filepath.Join(dirPath, hash[2:])
+
+	if err := os.MkdirAll(dirPath, 0755); err != nil {
 		return err
 	}
-	objects := filepath.Join(wd, ".notgit", "objects")
 
-	dir := filepath.Join(objects, hash[:2])
-	file := filepath.Join(dir, hash[2:])
-
-	// create objects dir if not exists
-	if _, err := os.Stat(dir); os.IsNotExist(err) {
-		err = os.Mkdir(dir, 0755)
-		if err != nil {
-			return err
-		}
-	}
-
-	if _, err := os.Stat(file); os.IsExist(err) {
+	if _, err := os.Stat(filePath); err == nil {
+		// already exists
 		return nil
+	} else if !os.IsNotExist(err) {
+		return err
 	}
 
-	return os.WriteFile(file, content, 0644)
+	return os.WriteFile(filePath, content, 0644)
 }

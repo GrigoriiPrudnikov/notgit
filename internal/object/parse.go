@@ -21,7 +21,6 @@ func Parse(hash string) ([]byte, []byte, error) {
 
 	content, err := os.ReadFile(path)
 	if err != nil {
-		println("here")
 		return nil, nil, err
 	}
 	content, err = utils.Decompress(content)

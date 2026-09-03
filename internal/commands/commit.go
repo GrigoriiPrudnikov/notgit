@@ -1,73 +1,22 @@
 package commands
 
 import (
-	"errors"
-	"flag"
-	"notgit/internal/commit"
-	"notgit/internal/config"
-	"notgit/internal/status"
-	"notgit/internal/utils"
-	"os"
-	"path/filepath"
+	"fmt"
+	"notgit/internal/repo"
 )
 
-func Commit(wd string) error {
-	if !utils.RepoInitialized(wd) {
-		return errors.New("not a notgit repository")
+func Commit(r *repo.Repo, params []string, options map[string]string) error {
+	var message string
+
+	if _, ok := options["m"]; ok {
+		message = options["m"]
+	} else {
+		message = options["message"]
 	}
-
-	// TODO: make config always take data from local config and write it fomr global config on repo init
-	// make config.Parse recieve path instead of bool
-	config, err := config.Parse(true)
-	if err != nil {
-		return err
-	}
-	defaultAuthor := config["user"]["name"] + " <" + config["user"]["email"] + ">"
-
-	var message, author string
-	var amend, allowEmpty bool
-
-	fs := flag.NewFlagSet("commit", flag.ExitOnError)
-
-	fs.StringVar(&message, "m", "", "commit message")
-	fs.StringVar(&author, "author", defaultAuthor, "commit author")
-	fs.BoolVar(&amend, "amend", false, "amend previous commit")
-	fs.BoolVar(&allowEmpty, "allow-empty", false, "allow empty commit")
-
-	fs.Parse(os.Args[2:])
 
 	if message == "" {
-		return errors.New("commit message is required")
-	}
-	if author == "" {
-		return errors.New("author is required")
+		return fmt.Errorf("commit message is required")
 	}
 
-	if amend {
-		c := commit.ParseHead()
-		if c == nil {
-			return errors.New("nothing to amend.")
-		}
-		c.Author = author
-		c.Message = message
-		return c.Write()
-	}
-
-	var parents []string
-	head, err := os.ReadFile(filepath.Join(wd, ".notgit", "HEAD"))
-	if string(head) != "" {
-		parents = append(parents, string(head))
-	}
-
-	worktreeAndIndexDiff, indexAndHeadDiff := status.GetRepoStatus()
-	if len(worktreeAndIndexDiff)+len(indexAndHeadDiff) == 0 && !allowEmpty {
-		return errors.New("nothing to commit, working tree clean")
-	}
-
-	c := commit.NewCommit(message, author, parents)
-	if c == nil {
-		return errors.New("commit creation failed")
-	}
-
-	return c.Write()
+	return r.Commit(message)
 }

@@ -3,40 +3,18 @@ package main
 import (
 	"fmt"
 	"notgit/internal/commands"
-	"notgit/internal/garbagecollector"
+	"notgit/internal/repo"
+	"notgit/internal/utils"
 	"os"
+	"slices"
 )
 
-var command = map[string]func(wd string) error{
-	"add":     commands.Add,
-	"commit":  commands.Commit,
-	"config":  commands.Config,
-	"init":    commands.Init,
-	"log":     commands.Log,
-	"status":  commands.Status,
-	"version": commands.Version,
-}
+var commandsAvailableWithoutRepo = []string{"version", "init", "config"}
 
 func main() {
 	args := os.Args
 	if len(args) == 1 {
 		// print help
-		return
-	}
-
-	if len(args) == 2 && (args[1] == "-v" || args[1] == "--version") {
-		command["version"]("")
-		return
-	}
-
-	execute, exists := command[os.Args[1]]
-	if !exists {
-		// TODO: add help like this:
-		// The most similar commands are
-		//    diff
-		//    fsck
-
-		fmt.Printf("notgit: %s is not a git command. See 'notgit --help'.\n", os.Args[1])
 		return
 	}
 
@@ -46,13 +24,53 @@ func main() {
 		return
 	}
 
-	err = execute(wd)
+	command := os.Args[1]
+	parsedArgs, err := utils.ParseArgs(os.Args[2:])
 	if err != nil {
-		fmt.Println(err)
+		fmt.Println("notgit: " + err.Error())
+		os.Exit(1)
+	}
+	params := parsedArgs.Params
+	opts := parsedArgs.Opts
+
+	r, err := repo.ParseRepo(wd)
+
+	if err == repo.ErrNotGitRepo {
+		if !slices.Contains(commandsAvailableWithoutRepo, command) {
+			fmt.Println("notgit: not a git repository")
+			os.Exit(1)
+		}
+
+		action := commands.Commands[command].Run
+		r := repo.NewRepo(wd)
+		err = action(r, params, opts)
+
+		if err != nil {
+			fmt.Println("notgit: " + err.Error())
+			os.Exit(1)
+		}
+		return
 	}
 
-	err = garbagecollector.CollectGarbage(wd)
 	if err != nil {
-		fmt.Println(err)
+		fmt.Println("notgit: " + err.Error())
+		os.Exit(1)
 	}
+
+	action, ok := commands.Commands[command]
+	if !ok {
+		fmt.Println("notgit: unknown command")
+		os.Exit(1)
+	}
+	err = action.Run(r, params, opts)
+
+	if err != nil {
+		fmt.Println("notgit: " + err.Error())
+		os.Exit(1)
+	}
+
+	// err = garbagecollector.CollectGarbage(wd)
+	// if err != nil {
+	// 	fmt.Println("notgit: failed to collect garbage\n" + err.Error())
+	// }
 }

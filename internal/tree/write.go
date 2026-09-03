@@ -10,13 +10,15 @@ import (
 	"path/filepath"
 )
 
-func (t *Tree) Write() error {
+// Write ensures all blobs and subtrees are materialized via the Store,
+// then writes the tree object itself without needing a wd parameter.
+func (t *Tree) Write(store object.Store) error {
 	for _, subtree := range t.SubTrees {
-		err := subtree.Write()
-		if err != nil {
+		if err := subtree.Write(store); err != nil {
 			return err
 		}
 	}
+
 	for _, hash := range t.Blobs {
 		_, content, err := object.Parse(hash)
 		if err != nil {
@@ -26,7 +28,7 @@ func (t *Tree) Write() error {
 		b := &blob.Blob{
 			Content: content,
 		}
-		if b.Write() != nil {
+		if err := b.Write(store); err != nil {
 			return err
 		}
 	}
@@ -39,7 +41,7 @@ func (t *Tree) Write() error {
 	header := fmt.Sprintf("tree %d\x00\n", len(content))
 	compressed := utils.Compress(header, content)
 
-	return object.Write(t.Hash(), compressed)
+	return store.Write(t.Hash(), compressed)
 }
 
 func (t *Tree) WriteIndex() error {
