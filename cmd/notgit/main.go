@@ -2,11 +2,12 @@ package main
 
 import (
 	"fmt"
+	"os"
+	"slices"
+
 	"notgit/internal/commands"
 	"notgit/internal/repo"
 	"notgit/internal/utils"
-	"os"
-	"slices"
 )
 
 var commandsAvailableWithoutRepo = []string{"version", "init", "config"}
@@ -42,9 +43,8 @@ func main() {
 		}
 
 		action := commands.Commands[command].Run
-		r := repo.NewRepo(wd)
+		r = repo.NewRepo(wd)
 		err = action(r, params, opts)
-
 		if err != nil {
 			fmt.Println("notgit: " + err.Error())
 			os.Exit(1)
@@ -63,7 +63,6 @@ func main() {
 		os.Exit(1)
 	}
 	err = action.Run(r, params, opts)
-
 	if err != nil {
 		fmt.Println("notgit: " + err.Error())
 		os.Exit(1)

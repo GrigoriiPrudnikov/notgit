@@ -1,14 +1,17 @@
+// Package commit contains the commit-related functions.
 package commit
 
 import (
-	"notgit/internal/tree"
-	"notgit/internal/utils"
 	"strconv"
 	"strings"
 	"time"
+
+	"notgit/internal/tree"
+	"notgit/internal/utils"
 )
 
 // TODO: change all types to strings (hash)
+
 type Commit struct {
 	Time    int64
 	Offset  string
@@ -18,10 +21,10 @@ type Commit struct {
 	Parent  string
 }
 
-func NewCommit(message, author string, parent string) *Commit {
+func NewCommit(message, author string, parent string) (*Commit, error) {
 	root, err := tree.LoadStaged(".")
 	if err != nil {
-		return nil
+		return nil, err
 	}
 
 	t := time.Now()
@@ -35,12 +38,17 @@ func NewCommit(message, author string, parent string) *Commit {
 		Tree:    root,
 	}
 
-	return c
+	return c, nil
 }
 
 func (c *Commit) GetContent() []byte {
+	hash, err := c.Tree.Hash()
+	if err != nil {
+		return nil
+	}
+
 	content := []string{
-		"tree " + c.Tree.Hash(),
+		"tree " + hash,
 		"author " + c.Author + " " + strconv.FormatInt(c.Time, 10) + " " + c.Offset,
 		"committer " + c.Author + " " + strconv.FormatInt(c.Time, 10) + " " + c.Offset,
 	}

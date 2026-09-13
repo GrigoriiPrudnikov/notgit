@@ -1,14 +1,16 @@
+// Package garbagecollector contains the garbage collector.
 package garbagecollector
 
 import (
+	"os"
+	"path/filepath"
+
 	"notgit/internal/commit"
 	"notgit/internal/indexfile"
 	"notgit/internal/tree"
-	"os"
-	"path/filepath"
 )
 
-// Deletes all unused objects
+// CollectGarbage removes all objects that are not referenced by the current
 func CollectGarbage(wd string) error {
 	objectsDir := filepath.Join(wd, ".notgit", "objects")
 
@@ -31,7 +33,7 @@ func CollectGarbage(wd string) error {
 	seenObjects[currentCommit.Hash()] = true
 
 	for currentCommit != nil {
-		err := checkTree(currentCommit.Tree, seenObjects)
+		err = checkTree(currentCommit.Tree, seenObjects)
 		if err != nil {
 			return err
 		}
@@ -66,9 +68,9 @@ func CollectGarbage(wd string) error {
 			fullHash := dir.Name() + file.Name()
 
 			if _, ok := seenObjects[fullHash]; !ok {
-				err := os.Remove(filepath.Join(objectsDir, filepath.Join(dir.Name(), file.Name())))
-				if err != nil {
-					return err
+				error := os.Remove(filepath.Join(objectsDir, filepath.Join(dir.Name(), file.Name())))
+				if error != nil {
+					return error
 				}
 			}
 		}
@@ -89,7 +91,12 @@ func CollectGarbage(wd string) error {
 }
 
 func checkTree(tree *tree.Tree, seenObjects map[string]bool) error {
-	seenObjects[tree.Hash()] = true
+	hash, err := tree.Hash()
+	if err != nil {
+		return err
+	}
+
+	seenObjects[hash] = true
 
 	for _, subtree := range tree.SubTrees {
 		err := checkTree(subtree, seenObjects)

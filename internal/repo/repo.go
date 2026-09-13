@@ -1,17 +1,19 @@
+// Package repo contains the repository-related functions.
 package repo
 
 import (
 	"errors"
 	"fmt"
+	"os"
+	"path/filepath"
+	"strconv"
+	"time"
+
 	"notgit/internal/blob"
 	"notgit/internal/commit"
 	"notgit/internal/indexfile"
 	"notgit/internal/object"
 	"notgit/internal/utils"
-	"os"
-	"path/filepath"
-	"strconv"
-	"time"
 )
 
 type Repo struct {
@@ -23,9 +25,7 @@ type Repo struct {
 	Store   object.Store
 }
 
-var (
-	ErrNotGitRepo = errors.New("notgit: not a repository")
-)
+var ErrNotGitRepo = errors.New("notgit: not a repository")
 
 func NewRepo(wd string) *Repo {
 	return &Repo{
@@ -94,7 +94,7 @@ func (r *Repo) Init() error {
 	}
 
 	for _, d := range dirs {
-		err := os.Mkdir(d, 0755)
+		err := os.Mkdir(d, 0o755)
 		if err != nil {
 			return errors.New("notgit: failed to create directory\n" + err.Error())
 		}
@@ -107,7 +107,7 @@ func (r *Repo) Init() error {
 	}
 
 	for path, content := range files {
-		err := os.WriteFile(path, []byte(content), 0644)
+		err := os.WriteFile(path, []byte(content), 0o644)
 		if err != nil {
 			return errors.New("notgit: failed to write file\n" + err.Error())
 		}
@@ -119,21 +119,22 @@ func (r *Repo) Init() error {
 func (r *Repo) Stage(path string) error {
 	info, err := os.Stat(path)
 	if err != nil {
+		if os.IsNotExist(err) {
+			return errors.New("notgit: file does not exist")
+		}
+
 		return errors.New("notgit: failed to get file info\n" + err.Error())
-	}
-	if os.IsNotExist(err) {
-		return errors.New("notgit: file does not exist")
 	}
 
 	// Stage dir
 	if info.IsDir() {
-		dir, err := os.ReadDir(path)
-		if err != nil {
-			return errors.New("notgit: failed to read directory\n" + err.Error())
+		dir, error := os.ReadDir(path)
+		if error != nil {
+			return errors.New("notgit: failed to read directory\n" + error.Error())
 		}
 		for _, entry := range dir {
-			if err := r.Stage(filepath.Join(path, entry.Name())); err != nil {
-				return err
+			if error = r.Stage(filepath.Join(path, entry.Name())); error != nil {
+				return error
 			}
 		}
 		return nil
@@ -168,8 +169,11 @@ func (r *Repo) Commit(message string) error {
 
 	author := "AUTHOR"
 
-	cmt := commit.NewCommit(message, author, r.Head)
+	cmt, err := commit.NewCommit(message, author, r.Head)
 
+	if cmt == nil {
+		return err
+	}
 	// Persist commit and tree via Store; then write HEAD in this repo's wd.
 	hash, err := cmt.Write(r.Store)
 	if err != nil {
@@ -178,7 +182,7 @@ func (r *Repo) Commit(message string) error {
 
 	r.Head = hash
 
-	return os.WriteFile(filepath.Join(r.Wd, ".notgit", "HEAD"), []byte(hash), 0644)
+	return os.WriteFile(filepath.Join(r.Wd, ".notgit", "head"), []byte(hash), 0o644)
 }
 
 func (r *Repo) Log() error {

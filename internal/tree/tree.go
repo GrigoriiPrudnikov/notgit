@@ -1,13 +1,15 @@
+// Package tree contains the tree-related functions.
 package tree
 
 import (
+	"os"
+	"path/filepath"
+	"strings"
+
 	"notgit/internal/blob"
 	"notgit/internal/indexfile"
 	"notgit/internal/object"
 	"notgit/internal/utils"
-	"os"
-	"path/filepath"
-	"strings"
 )
 
 type Tree struct {
@@ -24,13 +26,13 @@ func NewTree(path string) *Tree {
 	}
 }
 
-func (t *Tree) Hash() string {
+func (t *Tree) Hash() (string, error) {
 	content, err := t.GetContent()
 	if err != nil {
-		return ""
+		return "", err
 	}
 
-	return utils.Hash("tree", content)
+	return utils.Hash("tree", content), nil
 }
 
 func (t Tree) BasePath() string {
@@ -45,7 +47,6 @@ func (t *Tree) Add(path string, store object.Store) error {
 	}
 
 	info, err := os.Stat(path)
-
 	if err != nil {
 		return err
 	}
@@ -54,12 +55,12 @@ func (t *Tree) Add(path string, store object.Store) error {
 	}
 
 	if info.IsDir() {
-		dir, err := os.ReadDir(path)
-		if err != nil {
-			return err
+		dir, error := os.ReadDir(path)
+		if error != nil {
+			return error
 		}
 		for _, entry := range dir {
-			if err := t.Add(filepath.Join(path, entry.Name()), store); err != nil {
+			if error = t.Add(filepath.Join(path, entry.Name()), store); error != nil {
 				return err
 			}
 		}
@@ -78,7 +79,7 @@ func (t *Tree) Add(path string, store object.Store) error {
 	return b.Write(store)
 }
 
-// Returns found hash and flag indicating whether the file was found
+// Find returns found hash and flag indicating whether the file was found
 func (t Tree) Find(path string) (string, bool) {
 	parts := strings.Split(path, string(filepath.Separator))
 

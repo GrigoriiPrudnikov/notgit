@@ -3,11 +3,12 @@ package tree
 import (
 	"fmt"
 	"maps"
+	"os"
+	"path/filepath"
+
 	"notgit/internal/blob"
 	"notgit/internal/object"
 	"notgit/internal/utils"
-	"os"
-	"path/filepath"
 )
 
 // Write ensures all blobs and subtrees are materialized via the Store,
@@ -41,7 +42,12 @@ func (t *Tree) Write(store object.Store) error {
 	header := fmt.Sprintf("tree %d\x00\n", len(content))
 	compressed := utils.Compress(header, content)
 
-	return store.Write(t.Hash(), compressed)
+	hash, err := t.Hash()
+	if err != nil {
+		return err
+	}
+
+	return store.Write(hash, compressed)
 }
 
 func (t *Tree) WriteIndex() error {
@@ -58,7 +64,7 @@ func (t *Tree) WriteIndex() error {
 	}
 	index := filepath.Join(wd, ".notgit", "index")
 
-	return os.WriteFile(index, content, 0644)
+	return os.WriteFile(index, content, 0o644)
 }
 
 func (t *Tree) getEntries() map[string]string {
@@ -83,7 +89,12 @@ func (t Tree) GetContent() ([]byte, error) {
 
 	for _, treePath := range subtreesPaths {
 		subtree := t.SubTrees[treePath]
-		line := "tree " + treePath + " " + subtree.Hash() + "\n"
+
+		hash, err := subtree.Hash()
+		if err != nil {
+			return nil, err
+		}
+		line := "tree " + treePath + " " + hash + "\n"
 		content = append(content, []byte(line)...)
 	}
 

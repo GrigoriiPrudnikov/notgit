@@ -1,3 +1,4 @@
+// Package commands contains all the commands available in notgit.
 package commands
 
 import (

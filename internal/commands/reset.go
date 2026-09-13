@@ -3,9 +3,10 @@ package commands
 import (
 	"errors"
 	"flag"
+	"os"
+
 	"notgit/internal/tree"
 	"notgit/internal/utils"
-	"os"
 )
 
 func Reset(wd string) error {
@@ -19,15 +20,15 @@ func Reset(wd string) error {
 	fs.BoolVar(&hard, "hard", false, "Hard reset")
 
 	fs.Parse(os.Args[2:])
-	args := fs.Args()
+	// args := fs.Args()
 
-	var paths []string
-	for _, a := range args {
-		if a[0] == '-' {
-			continue
-		}
-		paths = append(paths, a)
-	}
+	// var paths []string
+	// for _, a := range args {
+	// 	if a[0] == '-' {
+	// 		continue
+	// 	}
+	// 	paths = append(paths, a)
+	// }
 
 	tree, err := tree.LoadStaged(wd)
 	if err != nil {
